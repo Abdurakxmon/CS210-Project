@@ -31,12 +31,12 @@ public class HelloController {
     }
 
     @FXML
-    protected void onCreateVehicleButtonClick() {
+    protected void onManageVehiclesButtonClick() {
         try {
-            FXMLLoader fxmlLoader = new FXMLLoader(MainApp.class.getResource("create-vehicle.fxml"));
-            Scene scene = new Scene(fxmlLoader.load(), 400, 500);
+            FXMLLoader fxmlLoader = new FXMLLoader(MainApp.class.getResource("vehicle.fxml"));
+            Scene scene = new Scene(fxmlLoader.load(), 950, 500);
             Stage stage = new Stage();
-            stage.setTitle("Create Vehicle");
+            stage.setTitle("Vehicle Management System");
             stage.setScene(scene);
             stage.show();
         } catch (Exception e) {

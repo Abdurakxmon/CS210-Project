@@ -24,12 +24,12 @@ hs_err_pid*
 replay_pid*
 
 # IntelliJ IDEA
-.idea/
+/.idea/
 *.iml
 *.iws
 
 # Maven
-target/
+/target/
 
 # Sensitive Files
 # Ignoring DatabaseManager.java to prevent committing database credentials

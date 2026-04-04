@@ -18,5 +18,5 @@
     </Label>
     <Label fx:id="statusLabel" text="Click to test database connection" />
     <Button onAction="#onTestConnectionButtonClick" text="Test DB Connection" />
-    <Button onAction="#onCreateVehicleButtonClick" text="Create Vehicle" />
+    <Button onAction="#onManageVehiclesButtonClick" text="Manage Vehicles" />
 </VBox>
