@@ -15,7 +15,6 @@ public class HelloController {
 
     @FXML
     protected void onTestConnectionButtonClick() {
-        // Test database connection when button is clicked
         try (Connection conn = DatabaseManager.getConnection()) {
             if (conn != null && !conn.isClosed()) {
                 statusLabel.setText("Database Connection: SUCCESS");
