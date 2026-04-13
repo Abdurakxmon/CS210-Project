@@ -1,0 +1,21 @@
+create table accounts (
+  id bigint unsigned not null auto_increment,
+  role enum('member', 'receptionist', 'worker', 'super_admin') not null default 'member',
+  full_name varchar(150) not null,
+  email varchar(150) null,
+  phone varchar(30) null,
+  password_hash varchar(255) not null,
+  status enum('active', 'closed', 'canceled', 'blacklisted') not null default 'active',
+  driver_license_number varchar(100) null,
+  driver_license_expiry date null,
+  date_joined date null,
+  street_address varchar(255) null,
+  city varchar(100) null,
+  state varchar(100) null,
+  zip_code varchar(20) null,
+  country varchar(100) null,
+  created_at timestamp null default current_timestamp,
+  updated_at timestamp null default current_timestamp on update current_timestamp,
+  constraint pk_accounts primary key (id),
+  constraint uq_accounts_email unique (email)
+) engine=InnoDB default charset=utf8mb4 collate=utf8mb4_unicode_ci;

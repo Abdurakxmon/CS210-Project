@@ -1,6 +1,6 @@
 # CS210 Car Rental System
 
-This is a JavaFX and MySQL-based application designed for a Car Rental System. It provides a user interface to interact with a MySQL database seamlessly using the DAO (Data Access Object) pattern.
+This project is focused on authentication for now. It uses JavaFX for the UI, MySQL for storage, and Ebean ORM for persistence and migrations.
 
 ## Prerequisites
 - Java 17 or higher
@@ -9,43 +9,34 @@ This is a JavaFX and MySQL-based application designed for a Car Rental System. I
 
 ## Configuration
 
-> **Note:** `DatabaseManager.java` is intentionally ignored in Git to prevent accidentally sharing database credentials. You will need to create this file locally.
+Set your database connection with JVM properties or environment variables:
 
-Create the file `src/main/java/com/cs210/project/DatabaseManager.java` and paste the following snippet. Ensure you update the `URL`, `USER`, and `PASSWORD` to match your local MySQL configuration:
+- `db.url` or `CAR_RENTAL_DB_URL`
+- `db.user` or `CAR_RENTAL_DB_USER`
+- `db.password` or `CAR_RENTAL_DB_PASSWORD`
 
-```java
-package com.cs210.project;
+Defaults:
 
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.SQLException;
-
-public class DatabaseManager {
-
-    private static final String URL = "jdbc:mysql://localhost:3306/your_database_name";
-    private static final String USER = "your_mysql_username";
-    private static final String PASSWORD = "your_mysql_password";
-
-    public static Connection getConnection() {
-        try {
-            return DriverManager.getConnection(URL, USER, PASSWORD);
-        } catch (SQLException e) {
-            System.err.println("Database connection failed!");
-            e.printStackTrace();
-            return null;
-        }
-    }
-}
-```
+- URL: `jdbc:mysql://localhost:3306/car_rental_system?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC`
+- User: `root`
+- Password: empty string
 
 ## How to Run
 
-1. Open a terminal or command prompt in the project root directory.
-2. Compile and run the application using Maven:
-   ```bash
-   mvn clean javafx:run
-   ```
+Run the JavaFX app:
+
+```powershell
+mvn clean javafx:run -Ddb.url="jdbc:mysql://localhost:3306/car_rental_system?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC" -Ddb.user="root" -Ddb.password=""
+```
+
+Run database migrations only:
+
+```powershell
+mvn exec:java@run-migrations -Ddb.url="jdbc:mysql://localhost:3306/car_rental_system?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC" -Ddb.user="root" -Ddb.password=""
+```
 
 ## Current Features
-- **Database Connection Tester:** Verify that the Java application is properly hooked up to your MySQL server.
-- **Vehicle Registration:** Fill out a JavaFX form to dynamically insert vehicles into the heavily featured `vehicles` database schema. Includes optional fields and safe null handling.
+- Login with an existing account from the `accounts` table
+- Register a new member account
+- PBKDF2 password hashing
+- Ebean-backed MySQL migration for the authentication schema
