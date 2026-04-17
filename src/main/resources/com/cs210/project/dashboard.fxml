@@ -79,7 +79,7 @@
                         <Button text="Refresh" onAction="#onRefreshAccountsClick" styleClass="secondary-ghost-button" />
                     </HBox>
 
-                    <TableView fx:id="accountsTable" prefHeight="280" columnResizePolicy="CONSTRAINED_RESIZE_POLICY" styleClass="accounts-table">
+                    <TableView fx:id="accountsTable" prefHeight="280" styleClass="accounts-table">
                         <columns>
                             <TableColumn fx:id="idColumn" text="ID" prefWidth="70" />
                             <TableColumn fx:id="fullNameColumn" text="Full Name" prefWidth="220" />

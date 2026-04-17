@@ -50,6 +50,9 @@ public class DashboardController {
 
     @FXML
     public void initialize() {
+
+
+
         configureTable();
         configureRoleAndStatusSelectors();
         setManagementMessage("", false);
@@ -59,6 +62,8 @@ public class DashboardController {
                 populateForm(current);
             }
         });
+        accountsTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
+
     }
 
     public void setCurrentAccount(Account account) {
