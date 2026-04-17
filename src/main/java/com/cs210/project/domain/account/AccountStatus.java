@@ -1,44 +1,32 @@
 package com.cs210.project.domain.account;
 
 public enum AccountStatus {
-    ACTIVE("active", "Active"),
-    CLOSED("closed", "Closed"),
-    CANCELED("canceled", "Canceled"),
-    BLACKLISTED("blacklisted", "Blacklisted");
+    ACTIVE(1, "Active"),
+    CLOSED(2, "Closed"),
+    CANCELED(3, "Cenceled"),
+    BLACKLISTED(4, "Blacklisted");
 
-    private final String databaseValue;
+
+    private final int code;
     private final String displayName;
 
-    AccountStatus(String databaseValue, String displayName) {
-        this.databaseValue = databaseValue;
+    AccountStatus(int code, String displayName) {
+        this.code = code;
         this.displayName = displayName;
     }
 
-    public String getDatabaseValue() {
-        return databaseValue;
+    public int getCode() {
+        return code;
+    }
+
+    public static AccountStatus fromCode(int code) {
+        for (AccountStatus status : values()) {
+            if (status.code == code) return status;
+        }
+        throw new IllegalArgumentException("Unknown status code: " + code);
     }
 
     public String getDisplayName() {
-        return displayName;
-    }
-
-    public static AccountStatus fromDatabaseValue(String value) {
-        if (value == null || value.isBlank()) {
-            return null;
-        }
-
-        String normalized = value.trim().toLowerCase();
-        for (AccountStatus status : values()) {
-            if (status.databaseValue.equals(normalized)) {
-                return status;
-            }
-        }
-
-        throw new IllegalArgumentException("Unknown account status: " + value);
-    }
-
-    @Override
-    public String toString() {
         return displayName;
     }
 }

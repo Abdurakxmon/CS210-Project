@@ -9,7 +9,6 @@
 <?import javafx.scene.control.TabPane?>
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.layout.HBox?>
-<?import javafx.scene.layout.Region?>
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
 
@@ -18,65 +17,15 @@
            fx:controller="com.cs210.project.authentication.AuthController"
            stylesheets="@styles/auth.css"
            styleClass="auth-root">
-    <HBox maxWidth="1120" prefHeight="680" styleClass="auth-shell">
-        <VBox HBox.hgrow="ALWAYS" prefWidth="620" styleClass="hero-panel">
+    <HBox alignment="CENTER" maxWidth="560" prefHeight="650" styleClass="auth-shell">
+        <VBox prefWidth="520" maxWidth="520" styleClass="form-panel">
             <padding>
-                <Insets top="42" right="40" bottom="42" left="40" />
+                <Insets top="30" right="30" bottom="30" left="30" />
             </padding>
 
-            <Label text="CS210 CAR RENTAL" styleClass="hero-kicker" />
-            <Label text="Authentication first, everything else after." wrapText="true" styleClass="hero-title" />
-            <Label text="This refactor focuses only on sign in and registration with Ebean against your MySQL accounts table."
-                   wrapText="true"
-                   styleClass="hero-copy" />
-
-            <VBox spacing="16">
-                <HBox spacing="14" alignment="CENTER_LEFT" styleClass="feature-row">
-                    <Label text="01" styleClass="feature-badge" />
-                    <VBox spacing="4">
-                        <Label text="Cleaner structure" styleClass="feature-title" />
-                        <Label text="Authentication, persistence, and domain code now live in separate packages."
-                               wrapText="true"
-                               styleClass="feature-copy" />
-                    </VBox>
-                </HBox>
-
-                <HBox spacing="14" alignment="CENTER_LEFT" styleClass="feature-row">
-                    <Label text="02" styleClass="feature-badge" />
-                    <VBox spacing="4">
-                        <Label text="Secure passwords" styleClass="feature-title" />
-                        <Label text="Passwords stay PBKDF2-hashed, matching the format already used in your dump."
-                               wrapText="true"
-                               styleClass="feature-copy" />
-                    </VBox>
-                </HBox>
-
-                <HBox spacing="14" alignment="CENTER_LEFT" styleClass="feature-row">
-                    <Label text="03" styleClass="feature-badge" />
-                    <VBox spacing="4">
-                        <Label text="Auth-only scope" styleClass="feature-title" />
-                        <Label text="The dashboard is intentionally minimal for now so we keep this slice focused."
-                               wrapText="true"
-                               styleClass="feature-copy" />
-                    </VBox>
-                </HBox>
-            </VBox>
-
-            <Region VBox.vgrow="ALWAYS" />
-
-            <Label text="Use the register tab to create a new member account, or sign in with an existing account."
-                   wrapText="true"
-                   styleClass="hero-footnote" />
-        </VBox>
-
-        <VBox prefWidth="430" styleClass="form-panel">
-            <padding>
-                <Insets top="34" right="32" bottom="34" left="32" />
-            </padding>
-
-            <Label text="Account Access" styleClass="panel-kicker" />
-            <Label text="Sign in or create your account" wrapText="true" styleClass="panel-title" />
-            <Label text="Connected with Ebean and built around the `accounts` table from your car rental schema."
+            <Label text="Car Rental System" styleClass="panel-kicker" />
+            <Label text="Welcome back" wrapText="true" styleClass="panel-title" />
+            <Label text="Sign in to continue, or create a new customer account."
                    wrapText="true"
                    styleClass="panel-copy" />
 
@@ -90,14 +39,18 @@
                             <content>
                                 <VBox spacing="14" styleClass="form-stack">
                                     <padding>
-                                        <Insets top="20" right="6" bottom="8" left="6" />
+                                        <Insets top="18" right="4" bottom="6" left="4" />
                                     </padding>
 
                                     <Label text="Email" styleClass="field-label" />
-                                    <TextField fx:id="loginEmailField" promptText="you@example.com" styleClass="app-field" />
+                                    <TextField fx:id="loginEmailField"
+                                               promptText="you@example.com"
+                                               styleClass="app-field" />
 
                                     <Label text="Password" styleClass="field-label" />
-                                    <PasswordField fx:id="loginPasswordField" promptText="Enter password" styleClass="app-field" />
+                                    <PasswordField fx:id="loginPasswordField"
+                                                   promptText="Enter password"
+                                                   styleClass="app-field" />
 
                                     <Button text="Login"
                                             defaultButton="true"
@@ -106,7 +59,7 @@
                                             styleClass="primary-button" />
 
                                     <Label fx:id="loginMessageLabel"
-                                           minHeight="40"
+                                           minHeight="36"
                                            wrapText="true"
                                            styleClass="status-label" />
                                 </VBox>
@@ -122,23 +75,33 @@
                             <content>
                                 <VBox spacing="14" styleClass="form-stack">
                                     <padding>
-                                        <Insets top="20" right="6" bottom="8" left="6" />
+                                        <Insets top="18" right="4" bottom="6" left="4" />
                                     </padding>
 
                                     <Label text="Full name" styleClass="field-label" />
-                                    <TextField fx:id="registerFullNameField" promptText="Your full name" styleClass="app-field" />
+                                    <TextField fx:id="registerFullNameField"
+                                               promptText="Your full name"
+                                               styleClass="app-field" />
 
                                     <Label text="Email" styleClass="field-label" />
-                                    <TextField fx:id="registerEmailField" promptText="you@example.com" styleClass="app-field" />
+                                    <TextField fx:id="registerEmailField"
+                                               promptText="you@example.com"
+                                               styleClass="app-field" />
 
                                     <Label text="Phone" styleClass="field-label" />
-                                    <TextField fx:id="registerPhoneField" promptText="+1 555 123 4567" styleClass="app-field" />
+                                    <TextField fx:id="registerPhoneField"
+                                               promptText="+998 90 123 45 67"
+                                               styleClass="app-field" />
 
                                     <Label text="Password" styleClass="field-label" />
-                                    <PasswordField fx:id="registerPasswordField" promptText="Minimum 6 characters" styleClass="app-field" />
+                                    <PasswordField fx:id="registerPasswordField"
+                                                   promptText="Minimum 6 characters"
+                                                   styleClass="app-field" />
 
                                     <Label text="Confirm password" styleClass="field-label" />
-                                    <PasswordField fx:id="registerConfirmPasswordField" promptText="Repeat your password" styleClass="app-field" />
+                                    <PasswordField fx:id="registerConfirmPasswordField"
+                                                   promptText="Repeat your password"
+                                                   styleClass="app-field" />
 
                                     <Button text="Create account"
                                             maxWidth="1.7976931348623157E308"
@@ -146,7 +109,7 @@
                                             styleClass="secondary-button" />
 
                                     <Label fx:id="registerMessageLabel"
-                                           minHeight="40"
+                                           minHeight="36"
                                            wrapText="true"
                                            styleClass="status-label" />
                                 </VBox>

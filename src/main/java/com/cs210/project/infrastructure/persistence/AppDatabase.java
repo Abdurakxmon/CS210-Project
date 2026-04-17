@@ -8,8 +8,7 @@ import io.ebean.datasource.DataSourceConfig;
 
 public final class AppDatabase {
 
-    private static final String DEFAULT_URL =
-            "jdbc:mysql://mysql-8.0/car_rental_system?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC";
+    private static final String DEFAULT_URL = "jdbc:mysql://mysql-8.0/car_rental_system";
     private static final String DEFAULT_USER = "root";
     private static final String DEFAULT_PASSWORD = "";
 

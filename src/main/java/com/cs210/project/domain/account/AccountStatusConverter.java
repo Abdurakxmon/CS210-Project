@@ -3,16 +3,16 @@ package com.cs210.project.domain.account;
 import jakarta.persistence.AttributeConverter;
 import jakarta.persistence.Converter;
 
-@Converter
-public class AccountStatusConverter implements AttributeConverter<AccountStatus, String> {
+@Converter(autoApply = false)
+public class AccountStatusConverter implements AttributeConverter<AccountStatus, Integer> {
 
     @Override
-    public String convertToDatabaseColumn(AccountStatus attribute) {
-        return attribute == null ? null : attribute.getDatabaseValue();
+    public Integer convertToDatabaseColumn(AccountStatus attribute) {
+        return attribute == null ? null : attribute.getCode();
     }
 
     @Override
-    public AccountStatus convertToEntityAttribute(String dbData) {
-        return AccountStatus.fromDatabaseValue(dbData);
+    public AccountStatus convertToEntityAttribute(Integer dbData) {
+        return dbData == null ? null : AccountStatus.fromCode(dbData);
     }
 }

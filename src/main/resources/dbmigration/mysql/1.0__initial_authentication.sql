@@ -1,11 +1,11 @@
 create table accounts (
   id bigint unsigned not null auto_increment,
-  role enum('member', 'receptionist', 'worker', 'super_admin') not null default 'member',
+  role int not null,
   full_name varchar(150) not null,
   email varchar(150) null,
   phone varchar(30) null,
   password_hash varchar(255) not null,
-  status enum('active', 'closed', 'canceled', 'blacklisted') not null default 'active',
+  status int not null,
   driver_license_number varchar(100) null,
   driver_license_expiry date null,
   date_joined date null,

@@ -22,7 +22,7 @@ public class Account {
     private Long id;
 
     @Convert(converter = AccountRoleConverter.class)
-    @Column(nullable = false, length = 20)
+    @Column(nullable = false)
     private AccountRole role;
 
     @Column(name = "full_name", nullable = false, length = 150)
@@ -38,7 +38,7 @@ public class Account {
     private String passwordHash;
 
     @Convert(converter = AccountStatusConverter.class)
-    @Column(nullable = false, length = 20)
+    @Column(nullable = false)
     private AccountStatus status;
 
     @Column(name = "driver_license_number", length = 100)

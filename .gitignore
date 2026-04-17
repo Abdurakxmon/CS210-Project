@@ -33,4 +33,4 @@ replay_pid*
 
 # Sensitive Files
 # Ignoring DatabaseManager.java to prevent committing database credentials
-src/main/java/com/cs210/project/DatabaseManager.java
+src/main/java/com/cs210/project/infrastructure/AppDatabse.php
