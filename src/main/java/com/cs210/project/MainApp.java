@@ -4,7 +4,7 @@ import com.cs210.project.config.AppDatabase;
 import com.cs210.project.controllers.AuthController;
 import com.cs210.project.models.Account;
 import com.cs210.project.ui.AuthView;
-import com.cs210.project.ui.DashboardView;
+import com.cs210.project.ui.WorkspaceView;
 import javafx.application.Application;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
@@ -44,7 +44,7 @@ public class MainApp extends Application {
     }
 
     private void showDashboardScene(Account account) {
-        Scene scene = new Scene(new DashboardView(account, this::showAuthScene), 980, 700);
+        Scene scene = new Scene(new WorkspaceView(account, this::showAuthScene), 980, 700);
         primaryStage.setTitle("CS210 Project | Dashboard");
         primaryStage.setScene(scene);
         primaryStage.centerOnScreen();
