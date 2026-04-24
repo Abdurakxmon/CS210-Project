@@ -1,16 +1,14 @@
-package com.cs210.project.authentication;
+package com.cs210.project.controllers;
 
-import com.cs210.project.domain.account.Account;
-import com.cs210.project.domain.account.AccountRole;
-import com.cs210.project.domain.account.AccountStatus;
-import com.cs210.project.infrastructure.persistence.AppDatabase;
-import io.ebean.Database;
+import com.cs210.project.models.Account;
+import com.cs210.project.models.AuthResult;
+import com.cs210.project.models.RegistrationRequest;
 
 import java.time.LocalDate;
 import java.util.Locale;
 import java.util.regex.Pattern;
 
-public class AuthenticationService {
+public class AuthController {
 
     private static final Pattern EMAIL_PATTERN = Pattern.compile("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$");
     private static final int MIN_PASSWORD_LENGTH = 6;
@@ -69,15 +67,15 @@ public class AuthenticationService {
             }
 
             Account account = new Account();
-            account.setRole(AccountRole.MEMBER);
+            account.setRole(Account.Role.MEMBER);
             account.setFullName(fullName);
             account.setEmail(email);
             account.setPhone(phone.isBlank() ? null : phone);
-            account.setStatus(AccountStatus.ACTIVE);
+            account.setStatus(Account.Status.ACTIVE);
             account.setDateJoined(LocalDate.now());
             account.setPlainPassword(password);
 
-            database().save(account);
+            account.save();
             return AuthResult.success("Registration successful.", account);
         } catch (Exception exception) {
             exception.printStackTrace();
@@ -86,16 +84,7 @@ public class AuthenticationService {
     }
 
     private Account findByEmail(String email) {
-        return database()
-                .find(Account.class)
-                .where()
-                .ieq("email", email)
-                .setMaxRows(1)
-                .findOne();
-    }
-
-    private Database database() {
-        return AppDatabase.getDatabase();
+        return Account.findByEmail(email);
     }
 
     private String normalizeEmail(String value) {

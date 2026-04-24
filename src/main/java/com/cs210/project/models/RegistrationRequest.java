@@ -1,4 +1,4 @@
-package com.cs210.project.authentication;
+package com.cs210.project.models;
 
 public record RegistrationRequest(
         String fullName,

@@ -12,18 +12,12 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.release>17</maven.compiler.release>
         <ebean.version>17.2.0</ebean.version>
-        <ebean.migration.version>14.3.0</ebean.migration.version>
     </properties>
 
     <dependencies>
         <dependency>
             <groupId>org.openjfx</groupId>
             <artifactId>javafx-controls</artifactId>
-            <version>17.0.6</version>
-        </dependency>
-        <dependency>
-            <groupId>org.openjfx</groupId>
-            <artifactId>javafx-fxml</artifactId>
             <version>17.0.6</version>
         </dependency>
 
@@ -37,12 +31,6 @@
             <groupId>io.ebean</groupId>
             <artifactId>ebean-mysql</artifactId>
             <version>${ebean.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>io.ebean</groupId>
-            <artifactId>ebean-migration</artifactId>
-            <version>${ebean.migration.version}</version>
         </dependency>
 
         <dependency>
@@ -74,24 +62,6 @@
                 <configuration>
                     <release>${maven.compiler.release}</release>
                 </configuration>
-            </plugin>
-
-            <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>exec-maven-plugin</artifactId>
-                <version>3.5.0</version>
-                <executions>
-                    <execution>
-                        <id>run-migrations</id>
-                        <goals>
-                            <goal>java</goal>
-                        </goals>
-                        <configuration>
-                            <mainClass>com.cs210.project.infrastructure.persistence.MigrationsCli</mainClass>
-                            <classpathScope>runtime</classpathScope>
-                        </configuration>
-                    </execution>
-                </executions>
             </plugin>
 
             <plugin>

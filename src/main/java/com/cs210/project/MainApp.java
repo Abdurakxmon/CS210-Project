@@ -1,46 +1,29 @@
 package com.cs210.project;
 
-import com.cs210.project.infrastructure.persistence.AppDatabase;
+import com.cs210.project.config.AppDatabase;
+import com.cs210.project.controllers.AuthController;
+import com.cs210.project.models.Account;
+import com.cs210.project.ui.AuthView;
+import com.cs210.project.ui.DashboardView;
 import javafx.application.Application;
-import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
 
-import java.io.IOException;
-import java.net.URL;
-
 public class MainApp extends Application {
 
-    private static final String AUTH_VIEW = "/com/cs210/project/auth.fxml";
     private static Stage primaryStage;
+    private final AuthController authController = new AuthController();
 
     public static Stage getPrimaryStage() {
         return primaryStage;
     }
 
-    public static <T> T showScene(String resourcePath, String title, double width, double height) throws IOException {
-        URL location = MainApp.class.getResource(resourcePath);
-        if (location == null) {
-            throw new IOException("Could not load FXML resource: " + resourcePath);
-        }
-
-        FXMLLoader loader = new FXMLLoader(location);
-        Scene scene = new Scene(loader.load(), width, height);
-
-        primaryStage.setTitle(title);
-        primaryStage.setScene(scene);
-        primaryStage.centerOnScreen();
-        primaryStage.show();
-
-        return loader.getController();
-    }
-
     @Override
-    public void start(Stage stage) throws IOException {
+    public void start(Stage stage) {
         primaryStage = stage;
         primaryStage.setMinWidth(980);
         primaryStage.setMinHeight(700);
-        showScene(AUTH_VIEW, "CS210 Project | Authentication", 1120, 720);
+        showAuthScene();
     }
 
     @Override
@@ -50,5 +33,21 @@ public class MainApp extends Application {
 
     public static void main(String[] args) {
         launch();
+    }
+
+    private void showAuthScene() {
+        Scene scene = new Scene(new AuthView(authController, this::showDashboardScene), 900, 680);
+        primaryStage.setTitle("CS210 Project | Authentication");
+        primaryStage.setScene(scene);
+        primaryStage.centerOnScreen();
+        primaryStage.show();
+    }
+
+    private void showDashboardScene(Account account) {
+        Scene scene = new Scene(new DashboardView(account, this::showAuthScene), 980, 700);
+        primaryStage.setTitle("CS210 Project | Dashboard");
+        primaryStage.setScene(scene);
+        primaryStage.centerOnScreen();
+        primaryStage.show();
     }
 }

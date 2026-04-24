@@ -1,10 +1,11 @@
-package com.cs210.project.domain.account;
+package com.cs210.project.models;
 
-import com.cs210.project.security.PasswordUtil;
+import com.cs210.project.config.AppDatabase;
+import com.cs210.project.config.PasswordUtil;
+import io.ebean.Database;
 import io.ebean.annotation.WhenCreated;
 import io.ebean.annotation.WhenModified;
 import jakarta.persistence.Column;
-import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
@@ -12,6 +13,8 @@ import jakarta.persistence.Table;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Locale;
 
 @Entity
 @Table(name = "accounts")
@@ -21,9 +24,8 @@ public class Account {
     @GeneratedValue
     private Long id;
 
-    @Convert(converter = AccountRoleConverter.class)
-    @Column(nullable = false)
-    private AccountRole role;
+    @Column(name = "role", nullable = false)
+    private Integer roleCode;
 
     @Column(name = "full_name", nullable = false, length = 150)
     private String fullName;
@@ -37,9 +39,8 @@ public class Account {
     @Column(name = "password_hash", nullable = false, length = 255)
     private String passwordHash;
 
-    @Convert(converter = AccountStatusConverter.class)
-    @Column(nullable = false)
-    private AccountStatus status;
+    @Column(name = "status", nullable = false)
+    private Integer statusCode;
 
     @Column(name = "driver_license_number", length = 100)
     private String driverLicenseNumber;
@@ -81,12 +82,12 @@ public class Account {
         this.id = id;
     }
 
-    public AccountRole getRole() {
-        return role;
+    public Role getRole() {
+        return Role.fromCode(roleCode);
     }
 
-    public void setRole(AccountRole role) {
-        this.role = role;
+    public void setRole(Role role) {
+        this.roleCode = role == null ? null : role.getCode();
     }
 
     public String getFullName() {
@@ -121,12 +122,12 @@ public class Account {
         this.passwordHash = passwordHash;
     }
 
-    public AccountStatus getStatus() {
-        return status;
+    public Status getStatus() {
+        return Status.fromCode(statusCode);
     }
 
-    public void setStatus(AccountStatus status) {
-        this.status = status;
+    public void setStatus(Status status) {
+        this.statusCode = status == null ? null : status.getCode();
     }
 
     public String getDriverLicenseNumber() {
@@ -218,11 +219,11 @@ public class Account {
     }
 
     public boolean isActive() {
-        return status == AccountStatus.ACTIVE;
+        return getStatus() == Status.ACTIVE;
     }
 
     public boolean isSuperAdmin() {
-        return role == AccountRole.SUPER_ADMIN;
+        return getRole() == Role.SUPER_ADMIN;
     }
 
     public String getDisplayName() {
@@ -230,10 +231,145 @@ public class Account {
     }
 
     public String getRoleLabel() {
+        Role role = getRole();
         return role == null ? "-" : role.getDisplayName();
     }
 
     public String getStatusLabel() {
+        Status status = getStatus();
         return status == null ? "-" : status.getDisplayName();
+    }
+
+    public void save() {
+        database().save(this);
+    }
+
+    public void update() {
+        if (id == null) {
+            throw new IllegalStateException("Cannot update an account without an id.");
+        }
+        database().update(this);
+    }
+
+    public void delete() {
+        if (id == null) {
+            return;
+        }
+        database().delete(this);
+    }
+
+    public static Account findById(Long id) {
+        if (id == null) {
+            return null;
+        }
+        return database().find(Account.class, id);
+    }
+
+    public static Account findByEmail(String rawEmail) {
+        String email = normalizeEmail(rawEmail);
+        if (email.isBlank()) {
+            return null;
+        }
+        return database()
+                .find(Account.class)
+                .where()
+                .ieq("email", email)
+                .setMaxRows(1)
+                .findOne();
+    }
+
+    public static List<Account> findAll() {
+        return database()
+                .find(Account.class)
+                .orderBy("id asc")
+                .findList();
+    }
+
+    private static Database database() {
+        return AppDatabase.getDatabase();
+    }
+
+    private static String normalizeEmail(String value) {
+        return value == null ? "" : value.trim().toLowerCase(Locale.ROOT);
+    }
+
+    public enum Role {
+        MEMBER(1, "Member"),
+        RECEPTIONIST(2, "Receptionist"),
+        WORKER(3, "Worker"),
+        SUPER_ADMIN(4, "Super Admin");
+
+        private final int code;
+        private final String displayName;
+
+        Role(int code, String displayName) {
+            this.code = code;
+            this.displayName = displayName;
+        }
+
+        public int getCode() {
+            return code;
+        }
+
+        public static Role fromCode(Integer code) {
+            if (code == null) {
+                return null;
+            }
+            for (Role role : values()) {
+                if (role.code == code) {
+                    return role;
+                }
+            }
+            return null;
+        }
+
+        public String getDisplayName() {
+            return displayName;
+        }
+
+        @Override
+        public String toString() {
+            return displayName;
+        }
+    }
+
+    public enum Status {
+        ACTIVE(1, "Active"),
+        CLOSED(2, "Closed"),
+        CANCELED(3, "Canceled"),
+        BLACKLISTED(4, "Blacklisted");
+
+        private final int code;
+        private final String displayName;
+
+        Status(int code, String displayName) {
+            this.code = code;
+            this.displayName = displayName;
+        }
+
+        public int getCode() {
+            return code;
+        }
+
+        public static Status fromCode(Integer code) {
+            if (code == null) {
+                return null;
+            }
+            for (Status status : values()) {
+                if (status.code == code) {
+                    return status;
+                }
+            }
+            return null;
+        }
+
+        public String getDisplayName() {
+            return displayName;
+        }
+
+        @Override
+        public String toString() {
+            return displayName;
+        }
     }
 }

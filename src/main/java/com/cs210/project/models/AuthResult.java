@@ -1,6 +1,4 @@
-package com.cs210.project.authentication;
-
-import com.cs210.project.domain.account.Account;
+package com.cs210.project.models;
 
 public record AuthResult(boolean success, String message, Account account) {
 
