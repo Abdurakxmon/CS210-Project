@@ -20,6 +20,7 @@ public class Vehicle {
     private String make;
     private int manufacturingYear;
     private int mileage;
+    private double pricePerDay;
 
     // Associated objects
     private String barcode; // For display convenience
@@ -28,6 +29,9 @@ public class Vehicle {
     private boolean isActive;
 
     public Vehicle() {}
+
+    public double getPricePerDay() { return pricePerDay; }
+    public void setPricePerDay(double pricePerDay) { this.pricePerDay = pricePerDay; }
 
     // Getters and Setters
     public boolean isActive() { return isActive; }

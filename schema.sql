@@ -55,6 +55,8 @@ CREATE TABLE IF NOT EXISTS vehicles (
     make VARCHAR(100),
     manufacturing_year INT,
     mileage INT,
+    is_active BOOLEAN DEFAULT TRUE,
+    price_per_day DECIMAL(10,2) DEFAULT 0.00,
     FOREIGN KEY (location_id) REFERENCES locations(id),
     FOREIGN KEY (parking_stall_id) REFERENCES parking_stalls(id),
     FOREIGN KEY (barcode_id) REFERENCES barcodes(id)
@@ -67,7 +69,9 @@ CREATE TABLE IF NOT EXISTS vehicle_logs (
     log_type INT NOT NULL,
     description TEXT,
     creation_date TIMESTAMP NOT NULL,
-    FOREIGN KEY (vehicle_id) REFERENCES vehicles(id) ON DELETE CASCADE
+    account_id INT NULL,
+    FOREIGN KEY (vehicle_id) REFERENCES vehicles(id) ON DELETE CASCADE,
+    FOREIGN KEY (account_id) REFERENCES accounts(id)
 ) ENGINE=InnoDB;
 
 -- 7. persons
@@ -91,6 +95,7 @@ CREATE TABLE IF NOT EXISTS accounts (
     password_hash VARCHAR(255) NOT NULL,
     status INT NOT NULL,
     role_type INT NOT NULL,
+    is_active BOOLEAN DEFAULT TRUE,
     FOREIGN KEY (person_id) REFERENCES persons(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
@@ -130,10 +135,12 @@ CREATE TABLE IF NOT EXISTS vehicle_reservations (
     return_date TIMESTAMP NULL,
     pickup_location_id INT NOT NULL,
     return_location_id INT NOT NULL,
+    processed_by_account_id INT NULL,
     FOREIGN KEY (member_id) REFERENCES members(id),
     FOREIGN KEY (vehicle_id) REFERENCES vehicles(id),
     FOREIGN KEY (pickup_location_id) REFERENCES locations(id),
-    FOREIGN KEY (return_location_id) REFERENCES locations(id)
+    FOREIGN KEY (return_location_id) REFERENCES locations(id),
+    FOREIGN KEY (processed_by_account_id) REFERENCES accounts(id)
 ) ENGINE=InnoDB;
 
 -- 13. additional_drivers

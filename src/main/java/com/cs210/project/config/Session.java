@@ -43,4 +43,8 @@ public class Session {
     public static boolean isSuperAdmin() {
         return isLoggedIn() && currentAccount.getRoleType() == com.cs210.project.constants.Enums.RoleType.SUPER_ADMIN;
     }
+
+    public static boolean isWorker() {
+        return isLoggedIn() && currentAccount.getRoleType() == com.cs210.project.constants.Enums.RoleType.WORKER;
+    }
 }

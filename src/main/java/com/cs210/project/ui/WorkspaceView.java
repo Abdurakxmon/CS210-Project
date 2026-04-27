@@ -28,7 +28,7 @@ public class WorkspaceView extends BorderPane {
         welcomeLabel.setStyle("-fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 0 0 20 0;");
 
         Button inventoryBtn = createSidebarBtn("Vehicle Inventory");
-        inventoryBtn.setOnAction(e -> setCenter(new VehiclesView(user)));
+        inventoryBtn.setOnAction(e -> setCenter(new VehiclesView(user, this::setCenter)));
 
         sidebar.getChildren().addAll(welcomeLabel, inventoryBtn);
 
@@ -42,26 +42,42 @@ public class WorkspaceView extends BorderPane {
             Button notifyBtn = createSidebarBtn("Notifications");
             notifyBtn.setOnAction(e -> setCenter(new NotificationView()));
             
-            Button pickupReturnBtn = createSidebarBtn("Pickup / Return");
-            pickupReturnBtn.setOnAction(e -> setCenter(new PickupReturnView()));
+            Button paymentsBtn = createSidebarBtn("My Payments");
+            paymentsBtn.setOnAction(e -> setCenter(new PaymentsHistoryView()));
 
-            sidebar.getChildren().addAll(myResBtn, reserveBtn, notifyBtn, pickupReturnBtn);
+            Button memberPickupBtn = createSidebarBtn("Pickup / Return");
+            memberPickupBtn.setOnAction(e -> setCenter(new PickupReturnView()));
+
+            sidebar.getChildren().addAll(myResBtn, reserveBtn, notifyBtn, paymentsBtn, memberPickupBtn);
         }
 
-        if (Session.isReceptionist() || Session.isSuperAdmin()) {
-            Button allResBtn = createSidebarBtn("All Reservations");
+        if (Session.isReceptionist() || Session.isSuperAdmin() || Session.isWorker()) {
+            String resLabel = Session.isWorker() ? "Check Returned Cars" : "All Reservations";
+            Button allResBtn = createSidebarBtn(resLabel);
             allResBtn.setOnAction(e -> setCenter(new ReservationsListView()));
             
-            Button stallsBtn = createSidebarBtn("Parking Stalls");
-            stallsBtn.setOnAction(e -> setCenter(new ParkingStallManagementView()));
-            
-            sidebar.getChildren().addAll(allResBtn, stallsBtn);
+            sidebar.getChildren().add(allResBtn);
+            if (!Session.isWorker()) {
+                Button staffPickupBtn = createSidebarBtn("Pickup / Return");
+                staffPickupBtn.setOnAction(e -> setCenter(new PickupReturnView()));
+                
+                Button stallsBtn = createSidebarBtn("Parking Stalls");
+                stallsBtn.setOnAction(e -> setCenter(new ParkingStallManagementView()));
+                sidebar.getChildren().addAll(stallsBtn, staffPickupBtn);
+            }
         }
 
         if (Session.isSuperAdmin()) {
             Button accountsBtn = createSidebarBtn("Manage Accounts");
             accountsBtn.setOnAction(e -> setCenter(new AccountManagementView()));
-            sidebar.getChildren().add(accountsBtn);
+            
+            Button systemsBtn = createSidebarBtn("Manage Rental Systems");
+            systemsBtn.setOnAction(e -> setCenter(new RentalSystemManagementView()));
+            
+            Button locationsBtn = createSidebarBtn("Manage Locations");
+            locationsBtn.setOnAction(e -> setCenter(new LocationManagementView()));
+
+            sidebar.getChildren().addAll(accountsBtn, systemsBtn, locationsBtn);
         }
 
         Button logoutBtn = createSidebarBtn("Logout");
@@ -75,7 +91,7 @@ public class WorkspaceView extends BorderPane {
         setLeft(sidebar);
 
         // Default center
-        setCenter(new VehiclesView(user));
+        setCenter(new VehiclesView(user, this::setCenter));
     }
 
     private Button createSidebarBtn(String text) {

@@ -65,4 +65,29 @@ public class PaymentRepository {
         } catch (SQLException e) { e.printStackTrace(); }
         return list;
     }
+
+    public List<Payment> findByMemberId(int memberId) {
+        List<Payment> list = new ArrayList<>();
+        String sql = "SELECT p.* FROM payments p " +
+                     "JOIN bills b ON p.bill_id = b.id " +
+                     "JOIN vehicle_reservations r ON b.reservation_id = r.id " +
+                     "WHERE r.member_id = ? ORDER BY p.creation_date DESC";
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setInt(1, memberId);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    Payment p = new Payment();
+                    p.setId(rs.getInt("id"));
+                    p.setBillId(rs.getInt("bill_id"));
+                    p.setCreationDate(rs.getTimestamp("creation_date").toLocalDateTime());
+                    p.setAmount(rs.getBigDecimal("amount"));
+                    p.setStatus(PaymentStatus.fromInt(rs.getInt("status")));
+                    p.setPaymentType(PaymentType.fromInt(rs.getInt("payment_type")));
+                    list.add(p);
+                }
+            }
+        } catch (SQLException e) { e.printStackTrace(); }
+        return list;
+    }
 }

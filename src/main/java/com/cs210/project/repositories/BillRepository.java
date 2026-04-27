@@ -31,6 +31,29 @@ public class BillRepository {
         return null;
     }
 
+    public void create(Bill bill) {
+        String sql = "INSERT INTO bills (reservation_id, total_amount) VALUES (?, ?)";
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+            pstmt.setInt(1, bill.getReservationId());
+            pstmt.setBigDecimal(2, bill.getTotalAmount() != null ? bill.getTotalAmount() : BigDecimal.ZERO);
+            pstmt.executeUpdate();
+            try (ResultSet rs = pstmt.getGeneratedKeys()) {
+                if (rs.next()) bill.setId(rs.getInt(1));
+            }
+        } catch (SQLException e) { e.printStackTrace(); }
+    }
+
+    public void updateTotal(int billId) {
+        String sql = "UPDATE bills b SET total_amount = (SELECT SUM(amount) FROM bill_items WHERE bill_id = ?) WHERE b.id = ?";
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setInt(1, billId);
+            pstmt.setInt(2, billId);
+            pstmt.executeUpdate();
+        } catch (SQLException e) { e.printStackTrace(); }
+    }
+
     public void createBill(int resId, BigDecimal baseAmount) {
         String sqlBill = "INSERT INTO bills (reservation_id, total_amount) VALUES (?, ?)";
         try (Connection conn = DatabaseConnection.getConnection();

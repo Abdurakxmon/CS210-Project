@@ -106,6 +106,16 @@ public class VehicleRepository {
         } catch (SQLException e) { e.printStackTrace(); }
     }
 
+    public void updateMileage(int vehicleId, int newMileage) {
+        String sql = "UPDATE vehicles SET mileage = ? WHERE id = ?";
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setInt(1, newMileage);
+            pstmt.setInt(2, vehicleId);
+            pstmt.executeUpdate();
+        } catch (SQLException e) { e.printStackTrace(); }
+    }
+
     public int getOrCreateBarcode(String barcode) {
         String checkSql = "SELECT id FROM barcodes WHERE barcode = ?";
         try (Connection conn = DatabaseConnection.getConnection();
@@ -130,8 +140,8 @@ public class VehicleRepository {
     }
 
     public void create(Vehicle v) {
-        String sql = "INSERT INTO vehicles (location_id, parking_stall_id, barcode_id, vehicle_type, car_type, license_number, stock_number, passenger_capacity, has_sunroof, status, model, make, manufacturing_year, mileage) " +
-                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO vehicles (location_id, parking_stall_id, barcode_id, vehicle_type, car_type, license_number, stock_number, passenger_capacity, has_sunroof, status, model, make, manufacturing_year, mileage, price_per_day) " +
+                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             pstmt.setInt(1, v.getLocationId());
@@ -149,6 +159,7 @@ public class VehicleRepository {
             pstmt.setString(12, v.getMake());
             pstmt.setInt(13, v.getManufacturingYear());
             pstmt.setInt(14, v.getMileage());
+            pstmt.setDouble(15, v.getPricePerDay());
             
             pstmt.executeUpdate();
             try (ResultSet gk = pstmt.getGeneratedKeys()) {
@@ -158,7 +169,7 @@ public class VehicleRepository {
     }
 
     public void update(Vehicle v) {
-        String sql = "UPDATE vehicles SET location_id=?, parking_stall_id=?, vehicle_type=?, car_type=?, license_number=?, stock_number=?, passenger_capacity=?, has_sunroof=?, status=?, model=?, make=?, manufacturing_year=?, mileage=? WHERE id=?";
+        String sql = "UPDATE vehicles SET location_id=?, parking_stall_id=?, vehicle_type=?, car_type=?, license_number=?, stock_number=?, passenger_capacity=?, has_sunroof=?, status=?, model=?, make=?, manufacturing_year=?, mileage=?, price_per_day=? WHERE id=?";
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setInt(1, v.getLocationId());
@@ -174,7 +185,8 @@ public class VehicleRepository {
             pstmt.setString(11, v.getMake());
             pstmt.setInt(12, v.getManufacturingYear());
             pstmt.setInt(13, v.getMileage());
-            pstmt.setInt(14, v.getId());
+            pstmt.setDouble(14, v.getPricePerDay());
+            pstmt.setInt(15, v.getId());
             pstmt.executeUpdate();
         } catch (SQLException e) { e.printStackTrace(); }
     }
@@ -205,6 +217,7 @@ public class VehicleRepository {
         v.setMake(rs.getString("make"));
         v.setManufacturingYear(rs.getInt("manufacturing_year"));
         v.setMileage(rs.getInt("mileage"));
+        v.setPricePerDay(rs.getDouble("price_per_day"));
         v.setBarcode(rs.getString("barcode"));
         v.setActive(rs.getBoolean("is_active"));
         try { v.setLocationName(rs.getString("loc_name")); } catch (Exception e) {}

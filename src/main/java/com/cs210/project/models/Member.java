@@ -18,4 +18,9 @@ public class Member {
     public void setDriverLicenseNumber(String driverLicenseNumber) { this.driverLicenseNumber = driverLicenseNumber; }
     public LocalDateTime getDriverLicenseExpiry() { return driverLicenseExpiry; }
     public void setDriverLicenseExpiry(LocalDateTime driverLicenseExpiry) { this.driverLicenseExpiry = driverLicenseExpiry; }
+
+    @Override
+    public String toString() {
+        return "Member ID: " + id + " (License: " + driverLicenseNumber + ")";
+    }
 }

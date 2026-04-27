@@ -8,6 +8,8 @@ import com.cs210.project.models.Member;
 import com.cs210.project.models.Person;
 
 import java.sql.*;
+import java.util.ArrayList;
+import java.util.List;
 
 public class MemberRepository {
 
@@ -122,5 +124,26 @@ public class MemberRepository {
         } finally {
             if (conn != null) try { conn.close(); } catch (SQLException e) { e.printStackTrace(); }
         }
+    }
+
+    public List<Member> findAllMembers() {
+        List<Member> list = new ArrayList<>();
+        String sql = "SELECT m.*, p.name FROM members m " +
+                     "JOIN accounts a ON m.account_id = a.id " +
+                     "JOIN persons p ON a.person_id = p.id";
+        try (Connection conn = DatabaseConnection.getConnection();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(sql)) {
+            while (rs.next()) {
+                Member m = new Member();
+                m.setId(rs.getInt("id"));
+                m.setAccountId(rs.getInt("account_id"));
+                m.setDriverLicenseNumber(rs.getString("driver_license_number"));
+                // We'll use a transient field for the name if available, or just use toString
+                // For simplicity in the UI, I'll assume Member.toString() or a custom mapper
+                list.add(m);
+            }
+        } catch (SQLException e) { e.printStackTrace(); }
+        return list;
     }
 }

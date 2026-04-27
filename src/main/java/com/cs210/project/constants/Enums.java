@@ -31,7 +31,8 @@ public class Enums {
 
     public enum ReservationStatus {
         WAITING(1, "Waiting"), PENDING(2, "Pending"), CONFIRMED(3, "Confirmed"), 
-        COMPLETED(4, "Completed"), CANCELLED(5, "Cancelled"), NONE(6, "None");
+        COMPLETED(4, "Completed"), CANCELLED(5, "Cancelled"), NONE(6, "None"),
+        WAITING_FOR_INSPECTION(7, "Waiting for Inspection");
         private final int value;
         private final String label;
         ReservationStatus(int v, String l) { this.value = v; this.label = l; }

@@ -38,9 +38,15 @@ public class VehiclesView extends VBox {
     private final ParkingStallRepository stallRepo = new ParkingStallRepository();
     private final TableView<Vehicle> table = new TableView<>();
     private final Account currentUser;
+    private java.util.function.Consumer<javafx.scene.Node> onViewChange;
 
     public VehiclesView(Account user) {
+        this(user, null);
+    }
+
+    public VehiclesView(Account user, java.util.function.Consumer<javafx.scene.Node> onViewChange) {
         this.currentUser = user;
+        this.onViewChange = onViewChange;
         setupUI();
         loadData();
     }
@@ -120,8 +126,9 @@ public class VehiclesView extends VBox {
             reserveBtn.setStyle("-fx-background-color: #2ecc71; -fx-text-fill: white;");
             reserveBtn.setOnAction(e -> {
                 Vehicle selected = table.getSelectionModel().getSelectedItem();
-                if (selected != null) {
-                    /* Future functionality */ }
+                if (selected != null && onViewChange != null) {
+                    onViewChange.accept(new ReservationView(currentUser, selected));
+                }
             });
             actions.getChildren().add(reserveBtn);
         }
@@ -145,6 +152,14 @@ public class VehiclesView extends VBox {
                 showDetailsDialog(selected);
         });
         actions.getChildren().add(detailsBtn);
+
+        Button showBarcodeBtn = new Button("Show QR Code");
+        showBarcodeBtn.setStyle("-fx-background-color: #f39c12; -fx-text-fill: white;");
+        showBarcodeBtn.setOnAction(e -> {
+            Vehicle selected = table.getSelectionModel().getSelectedItem();
+            if (selected != null) showBarcodeDialog(selected);
+        });
+        actions.getChildren().add(showBarcodeBtn);
 
         if (Session.isSuperAdmin() || Session.isReceptionist()) {
             Button addBtn = new Button("Add Vehicle");
@@ -196,7 +211,10 @@ public class VehiclesView extends VBox {
         TableColumn<Vehicle, Boolean> activeCol = new TableColumn<>("Active");
         activeCol.setCellValueFactory(new PropertyValueFactory<>("active"));
 
-        table.getColumns().addAll(makeCol, modelCol, plateCol, locCol, statusCol, activeCol);
+        TableColumn<Vehicle, Double> priceCol = new TableColumn<>("Price/Day");
+        priceCol.setCellValueFactory(new PropertyValueFactory<>("pricePerDay"));
+
+        table.getColumns().addAll(makeCol, modelCol, plateCol, locCol, priceCol, statusCol, activeCol);
         table.setPlaceholder(new Label("No vehicles found."));
 
         getChildren().addAll(title, filterGrid, actions, table);
@@ -223,6 +241,8 @@ public class VehiclesView extends VBox {
         CheckBox sunroofCheck = new CheckBox("Has Sunroof");
         if (vehicle != null)
             sunroofCheck.setSelected(vehicle.isHasSunroof());
+
+        TextField priceField = new TextField(vehicle != null ? String.valueOf(vehicle.getPricePerDay()) : "50.0");
 
         ComboBox<VehicleType> typeBox = new ComboBox<>(FXCollections.observableArrayList(VehicleType.values()));
         if (vehicle != null)
@@ -283,7 +303,9 @@ public class VehiclesView extends VBox {
         grid.add(locBox, 1, 5);
         grid.add(new Label("Parking Stall:"), 2, 5);
         grid.add(stallBox, 3, 5);
-        grid.add(sunroofCheck, 1, 6);
+        grid.add(new Label("Price/Day:"), 0, 6);
+        grid.add(priceField, 1, 6);
+        grid.add(sunroofCheck, 2, 6);
 
         Button saveBtn = new Button("Save Vehicle");
         saveBtn.setStyle("-fx-background-color: #2ecc71; -fx-text-fill: white; -fx-font-weight: bold;");
@@ -307,6 +329,7 @@ public class VehiclesView extends VBox {
                     v.setLocationId(locBox.getValue().getId());
                 if (stallBox.getValue() != null)
                     v.setParkingStallId(stallBox.getValue().getId());
+                v.setPricePerDay(Double.parseDouble(priceField.getText()));
 
                 if (vehicle == null) {
                     v.setStatus(com.cs210.project.constants.VehicleStatus.AVAILABLE);
@@ -460,6 +483,7 @@ public class VehiclesView extends VBox {
                 stallName = stall.toString();
         }
         addDetailRow(info, "Parking Stall:", stallName, row++);
+        addDetailRow(info, "Price/Day:", String.format("$%.2f", v.getPricePerDay()), row++);
         addDetailRow(info, "Sunroof:", v.isHasSunroof() ? "Yes" : "No", row++);
         addDetailRow(info, "Current Status:", v.getStatus().toString(), row++);
 
@@ -481,6 +505,32 @@ public class VehiclesView extends VBox {
         val.setStyle("-fx-text-fill: #2c3e50;");
         grid.add(lbl, 0, row);
         grid.add(val, 1, row);
+    }
+
+    private void showBarcodeDialog(Vehicle v) {
+        Stage dialog = new Stage();
+        dialog.initModality(Modality.APPLICATION_MODAL);
+        dialog.setTitle("Vehicle Barcode / QR Code");
+
+        VBox layout = new VBox(20);
+        layout.setPadding(new Insets(20));
+        layout.setAlignment(javafx.geometry.Pos.CENTER);
+
+        Label header = new Label("Vehicle: " + v.getMake() + " " + v.getModel());
+        header.setStyle("-fx-font-weight: bold; -fx-font-size: 16px;");
+
+        javafx.scene.image.ImageView qrView = new javafx.scene.image.ImageView();
+        qrView.setImage(com.cs210.project.utils.BarcodeUtils.generateQRCode(v.getBarcode(), 250, 250));
+        
+        Label barcodeText = new Label("Barcode Value: " + v.getBarcode());
+        barcodeText.setStyle("-fx-font-family: 'Courier New'; -fx-font-size: 14px;");
+
+        Button closeBtn = new Button("Close");
+        closeBtn.setOnAction(e -> dialog.close());
+
+        layout.getChildren().addAll(header, qrView, barcodeText, closeBtn);
+        dialog.setScene(new Scene(layout));
+        dialog.show();
     }
 
     private void loadData() {

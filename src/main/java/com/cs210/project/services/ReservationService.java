@@ -17,8 +17,12 @@ public class ReservationService {
     private final VehicleRepository vehicleRepo = new VehicleRepository();
     private final BillRepository billRepo = new BillRepository();
     private final NotificationRepository notifyRepo = new NotificationRepository();
+    private final EquipmentRepository equipmentRepo = new EquipmentRepository();
+    private final InsuranceRepository insuranceRepo = new InsuranceRepository();
+    private final ServiceRepository serviceRepo = new ServiceRepository();
 
-    public String createReservation(int memberId, int vehicleId, int pickupLoc, int returnLoc, LocalDateTime dueDate) throws Exception {
+    public String createReservation(int memberId, int vehicleId, int pickupLoc, int returnLoc, LocalDateTime dueDate,
+                                    List<InsuranceType> insurances, List<EquipmentType> equipments, List<ServiceType> services) throws Exception {
         Vehicle v = vehicleRepo.findById(vehicleId);
         if (v == null || v.getStatus() != VehicleStatus.AVAILABLE) {
             throw new Exception("Vehicle is not available for reservation.");
@@ -50,7 +54,50 @@ public class ReservationService {
             vehicleRepo.updateStatus(vehicleId, VehicleStatus.RESERVED);
 
             // Create Initial Bill
-            billRepo.createBill(resId, new BigDecimal("50.00")); // Base charge example
+            com.cs210.project.models.Bill bill = new com.cs210.project.models.Bill();
+            bill.setReservationId(resId);
+            billRepo.create(bill);
+            
+            // 1. Base Charge
+            long days = java.time.Duration.between(LocalDateTime.now(), dueDate).toDays();
+            if (days < 1) days = 1;
+            BigDecimal baseAmount = BigDecimal.valueOf(v.getPricePerDay() * days);
+            billRepo.addItem(bill.getId(), BillItemType.BASE_CHARGE, baseAmount, "Base Rental Charge (" + days + " days)");
+
+            // 2. Add Insurances
+            for (InsuranceType type : insurances) {
+                BigDecimal price = new BigDecimal("15.00"); // Standard price
+                com.cs210.project.models.RentalInsurance ri = new com.cs210.project.models.RentalInsurance();
+                ri.setReservationId(resId);
+                ri.setInsuranceType(type);
+                ri.setPrice(price);
+                insuranceRepo.add(ri);
+                billRepo.addItem(bill.getId(), BillItemType.OTHER, price, "Insurance: " + type.name());
+            }
+
+            // 3. Add Equipments
+            for (EquipmentType type : equipments) {
+                BigDecimal price = new BigDecimal("10.00");
+                com.cs210.project.models.Equipment eq = new com.cs210.project.models.Equipment();
+                eq.setReservationId(resId);
+                eq.setEquipmentType(type);
+                eq.setPrice(price);
+                equipmentRepo.add(eq);
+                billRepo.addItem(bill.getId(), BillItemType.OTHER, price, "Equipment: " + type.name());
+            }
+
+            // 4. Add Services
+            for (ServiceType type : services) {
+                BigDecimal price = new BigDecimal("20.00");
+                com.cs210.project.models.Service s = new com.cs210.project.models.Service();
+                s.setReservationId(resId);
+                s.setServiceType(type);
+                s.setPrice(price);
+                serviceRepo.add(s);
+                billRepo.addItem(bill.getId(), BillItemType.OTHER, price, "Service: " + type.name());
+            }
+
+            billRepo.updateTotal(bill.getId());
 
             // Create Notification
             notifyRepo.create(resId, NotificationType.SYSTEM, "Reservation " + resNumber + " confirmed for " + v.getMake() + " " + v.getModel());
@@ -85,5 +132,25 @@ public class ReservationService {
                 }
             }
         }
+    }
+
+    public void updateReservation(VehicleReservation res) {
+        resRepo.update(res);
+        notifyRepo.create(res.getId(), NotificationType.SYSTEM, "Reservation " + res.getReservationNumber() + " has been updated by staff.");
+    }
+
+    public void deleteReservation(int resId) throws Exception {
+        String sql = "SELECT vehicle_id FROM vehicle_reservations WHERE id = ?";
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setInt(1, resId);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    int vehicleId = rs.getInt("vehicle_id");
+                    vehicleRepo.updateStatus(vehicleId, VehicleStatus.AVAILABLE);
+                }
+            }
+        }
+        resRepo.delete(resId);
     }
 }
