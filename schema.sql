@@ -62,19 +62,7 @@ CREATE TABLE IF NOT EXISTS vehicles (
     FOREIGN KEY (barcode_id) REFERENCES barcodes(id)
 ) ENGINE=InnoDB;
 
--- 6. vehicle_logs
-CREATE TABLE IF NOT EXISTS vehicle_logs (
-    id INT PRIMARY KEY AUTO_INCREMENT,
-    vehicle_id INT NOT NULL,
-    log_type INT NOT NULL,
-    description TEXT,
-    creation_date TIMESTAMP NOT NULL,
-    account_id INT NULL,
-    FOREIGN KEY (vehicle_id) REFERENCES vehicles(id) ON DELETE CASCADE,
-    FOREIGN KEY (account_id) REFERENCES accounts(id)
-) ENGINE=InnoDB;
-
--- 7. persons
+-- 6. persons
 CREATE TABLE IF NOT EXISTS persons (
     id INT PRIMARY KEY AUTO_INCREMENT,
     name VARCHAR(150) NOT NULL,
@@ -87,7 +75,7 @@ CREATE TABLE IF NOT EXISTS persons (
     phone VARCHAR(50)
 ) ENGINE=InnoDB;
 
--- 8. accounts
+-- 7. accounts
 CREATE TABLE IF NOT EXISTS accounts (
     id INT PRIMARY KEY AUTO_INCREMENT,
     person_id INT UNIQUE NOT NULL,
@@ -96,7 +84,19 @@ CREATE TABLE IF NOT EXISTS accounts (
     status INT NOT NULL,
     role_type INT NOT NULL,
     is_active BOOLEAN DEFAULT TRUE,
-    FOREIGN KEY (person_id) REFERENCES persons(id) ON DELETE CASCADE
+FOREIGN KEY (person_id) REFERENCES persons(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+-- 8. vehicle_logs
+CREATE TABLE IF NOT EXISTS vehicle_logs (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    vehicle_id INT NOT NULL,
+    log_type INT NOT NULL,
+    description TEXT,
+    creation_date TIMESTAMP NOT NULL,
+    account_id INT NULL,
+    FOREIGN KEY (vehicle_id) REFERENCES vehicles(id) ON DELETE CASCADE,
+FOREIGN KEY (account_id) REFERENCES accounts(id)
 ) ENGINE=InnoDB;
 
 -- 9. members
