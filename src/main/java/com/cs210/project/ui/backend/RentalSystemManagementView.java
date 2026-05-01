@@ -1,4 +1,4 @@
-package com.cs210.project.ui;
+package com.cs210.project.ui.backend;
 
 import com.cs210.project.models.RentalSystem;
 import com.cs210.project.repositories.RentalSystemRepository;

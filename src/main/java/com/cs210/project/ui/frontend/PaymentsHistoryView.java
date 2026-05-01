@@ -1,4 +1,4 @@
-package com.cs210.project.ui;
+package com.cs210.project.ui.frontend;
 
 import com.cs210.project.config.Session;
 import com.cs210.project.models.Payment;

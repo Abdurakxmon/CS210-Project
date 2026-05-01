@@ -1,4 +1,4 @@
-package com.cs210.project.ui;
+package com.cs210.project.ui.frontend;
 
 import com.cs210.project.config.Session;
 import com.cs210.project.constants.Enums.VehicleType;
@@ -251,6 +251,39 @@ public class VehiclesView extends VBox {
         TextField capacityField = new TextField(vehicle != null ? String.valueOf(vehicle.getPassengerCapacity()) : "5");
         TextField stockField = new TextField(vehicle != null ? vehicle.getStockNumber() : "");
         TextField imagePathField = new TextField(vehicle != null ? vehicle.getImagePath() : "");
+        imagePathField.setEditable(false); // Make it read-only, user must use browse
+        Button browseBtn = new Button("Browse...");
+        javafx.scene.image.ImageView preview = new javafx.scene.image.ImageView();
+        preview.setFitWidth(150);
+        preview.setFitHeight(100);
+        preview.setPreserveRatio(true);
+        preview.setStyle("-fx-border-color: #ccc; -fx-border-style: dashed;");
+
+        if (vehicle != null && vehicle.getImagePath() != null && !vehicle.getImagePath().isBlank()) {
+            try {
+                preview.setImage(new javafx.scene.image.Image(vehicle.getImagePath()));
+            } catch (Exception ex) {
+                // Ignore if image fails to load
+            }
+        }
+
+        browseBtn.setOnAction(e -> {
+            javafx.stage.FileChooser fileChooser = new javafx.stage.FileChooser();
+            fileChooser.setTitle("Select Vehicle Image");
+            fileChooser.getExtensionFilters().addAll(
+                new javafx.stage.FileChooser.ExtensionFilter("Image Files", "*.png", "*.jpg", "*.jpeg", "*.gif")
+            );
+            java.io.File selectedFile = fileChooser.showOpenDialog(dialog);
+            if (selectedFile != null) {
+                String uri = selectedFile.toURI().toString();
+                imagePathField.setText(uri);
+                try {
+                    preview.setImage(new javafx.scene.image.Image(uri));
+                } catch (Exception ex) {
+                    new Alert(Alert.AlertType.ERROR, "Failed to load selected image.").show();
+                }
+            }
+        });
         TextField fuelLevelField = new TextField(vehicle != null ? String.valueOf(vehicle.getFuelLevel()) : "100");
         CheckBox sunroofCheck = new CheckBox("Has Sunroof");
         if (vehicle != null)
@@ -331,7 +364,10 @@ public class VehiclesView extends VBox {
         grid.add(priceField, 1, 6);
         grid.add(sunroofCheck, 2, 6);
         grid.add(new Label("Image Path:"), 0, 7);
-        grid.add(imagePathField, 1, 7);
+        HBox imageBox = new HBox(10, imagePathField, browseBtn);
+        grid.add(imageBox, 1, 7);
+        grid.add(new Label("Preview:"), 0, 9);
+        grid.add(preview, 1, 9);
         grid.add(new Label("Transmission:"), 2, 7);
         grid.add(transmissionBox, 3, 7);
         grid.add(new Label("Fuel Type:"), 0, 8);
@@ -490,8 +526,20 @@ public class VehiclesView extends VBox {
 
         VBox layout = new VBox(15);
         layout.setPadding(new Insets(20));
-        layout.setMinWidth(400);
+        layout.setMinWidth(450);
         layout.setStyle("-fx-background-color: #ffffff;");
+
+        javafx.scene.image.ImageView carImage = new javafx.scene.image.ImageView();
+        carImage.setFitWidth(400);
+        carImage.setFitHeight(250);
+        carImage.setPreserveRatio(true);
+        if (v.getImagePath() != null && !v.getImagePath().isBlank()) {
+            try {
+                carImage.setImage(new javafx.scene.image.Image(v.getImagePath()));
+            } catch (Exception ex) {
+                // Fallback to placeholder or nothing
+            }
+        }
 
         Label header = new Label(v.getMake() + " " + v.getModel());
         header.setStyle("-fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: #2c3e50;");
@@ -531,7 +579,11 @@ public class VehiclesView extends VBox {
         closeBtn.setOnAction(e -> dialog.close());
         closeBtn.setStyle("-fx-background-color: #34495e; -fx-text-fill: white;");
 
-        layout.getChildren().addAll(header, new Separator(), info, new Separator(), closeBtn);
+        layout.getChildren().addAll(header, new Separator());
+        if (carImage.getImage() != null) {
+            layout.getChildren().add(carImage);
+        }
+        layout.getChildren().addAll(info, new Separator(), closeBtn);
         layout.setAlignment(javafx.geometry.Pos.TOP_CENTER);
 
         dialog.setScene(new Scene(layout));

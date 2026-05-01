@@ -1,4 +1,4 @@
-package com.cs210.project.ui;
+package com.cs210.project.ui.frontend;
 
 import com.cs210.project.models.Account;
 import com.cs210.project.models.Location;
@@ -134,6 +134,12 @@ public class ReservationView extends VBox {
         });
 
         // Auto-select pickup location when vehicle is selected
+        javafx.scene.image.ImageView vehiclePreview = new javafx.scene.image.ImageView();
+        vehiclePreview.setFitWidth(200);
+        vehiclePreview.setFitHeight(120);
+        vehiclePreview.setPreserveRatio(true);
+        vehiclePreview.setStyle("-fx-border-color: #ddd; -fx-border-width: 1; -fx-border-style: solid;");
+
         vehicleCombo.valueProperty().addListener((obs, oldVal, newVal) -> {
             if (newVal != null) {
                 for (Location loc : pickupLocCombo.getItems()) {
@@ -142,18 +148,38 @@ public class ReservationView extends VBox {
                         break;
                     }
                 }
+                if (newVal.getImagePath() != null && !newVal.getImagePath().isBlank()) {
+                    try {
+                        vehiclePreview.setImage(new javafx.scene.image.Image(newVal.getImagePath()));
+                    } catch (Exception ex) {
+                        vehiclePreview.setImage(null);
+                    }
+                } else {
+                    vehiclePreview.setImage(null);
+                }
+            } else {
+                vehiclePreview.setImage(null);
             }
         });
 
         // Trigger listener if pre-selected
         if (vehicleCombo.getValue() != null) {
+            Vehicle val = vehicleCombo.getValue();
             for (Location loc : pickupLocCombo.getItems()) {
-                if (loc.getId() == vehicleCombo.getValue().getLocationId()) {
+                if (loc.getId() == val.getLocationId()) {
                     pickupLocCombo.setValue(loc);
                     break;
                 }
             }
+            if (val.getImagePath() != null && !val.getImagePath().isBlank()) {
+                try {
+                    vehiclePreview.setImage(new javafx.scene.image.Image(val.getImagePath()));
+                } catch (Exception ex) {}
+            }
         }
+
+        grid.add(new Label("Preview:"), 2, 0, 1, 3);
+        grid.add(vehiclePreview, 2, 1, 1, 5);
 
         // Add-ons Section
         VBox addonsBox = new VBox(10);

@@ -2,8 +2,8 @@ package com.cs210.project;
 
 import com.cs210.project.models.Account;
 import com.cs210.project.config.DatabaseInitializer;
-import com.cs210.project.ui.AuthView;
-import com.cs210.project.ui.RegistrationView;
+import com.cs210.project.ui.frontend.AuthView;
+import com.cs210.project.ui.frontend.RegistrationView;
 import com.cs210.project.ui.WorkspaceView;
 import javafx.application.Application;
 import javafx.scene.Scene;
@@ -25,6 +25,10 @@ public class MainApp extends Application {
         showAuthScene();
     }
 
+    private void applyStyle(Scene scene) {
+        scene.getStylesheets().add(getClass().getResource("/style.css").toExternalForm());
+    }
+
     public static void main(String[] args) {
         DatabaseInitializer.initializeFromConfig();
         launch();
@@ -32,6 +36,7 @@ public class MainApp extends Application {
 
     private void showAuthScene() {
         Scene scene = new Scene(new AuthView(this::showDashboardScene, this::showRegistrationScene), 900, 680);
+        applyStyle(scene);
         primaryStage.setTitle("CS210 Project | Authentication");
         primaryStage.setScene(scene);
         primaryStage.centerOnScreen();
@@ -40,6 +45,7 @@ public class MainApp extends Application {
 
     private void showRegistrationScene() {
         Scene scene = new Scene(new RegistrationView(this::showAuthScene), 900, 680);
+        applyStyle(scene);
         primaryStage.setTitle("CS210 Project | Member Registration");
         primaryStage.setScene(scene);
         primaryStage.centerOnScreen();
@@ -48,6 +54,7 @@ public class MainApp extends Application {
 
     private void showDashboardScene(Account account) {
         Scene scene = new Scene(new WorkspaceView(this::showAuthScene), 980, 700);
+        applyStyle(scene);
         primaryStage.setTitle("CS210 Project | Dashboard");
         primaryStage.setScene(scene);
         primaryStage.centerOnScreen();
