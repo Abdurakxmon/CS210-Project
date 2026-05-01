@@ -2,6 +2,8 @@ package com.cs210.project.repositories;
 
 import com.cs210.project.config.DatabaseConnection;
 import com.cs210.project.constants.Enums.CarType;
+import com.cs210.project.constants.Enums.FuelType;
+import com.cs210.project.constants.Enums.TransmissionType;
 import com.cs210.project.constants.Enums.VehicleType;
 import com.cs210.project.constants.VehicleStatus;
 import com.cs210.project.models.Vehicle;
@@ -15,10 +17,11 @@ public class VehicleRepository {
 
     public List<Vehicle> findAll() {
         List<Vehicle> vehicles = new ArrayList<>();
-        String sql = "SELECT v.*, b.barcode, l.name as loc_name, s.name as sys_name FROM vehicles v " +
+        String sql = "SELECT v.*, b.barcode, l.name as loc_name, s.name as sys_name, ps.stall_number FROM vehicles v " +
                      "JOIN barcodes b ON v.barcode_id = b.id " +
                      "JOIN locations l ON v.location_id = l.id " +
-                     "JOIN car_rental_systems s ON l.system_id = s.id";
+                     "JOIN car_rental_systems s ON l.system_id = s.id " +
+                     "LEFT JOIN parking_stalls ps ON v.parking_stall_id = ps.id";
         try (Connection conn = DatabaseConnection.getConnection();
              Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
@@ -33,10 +36,11 @@ public class VehicleRepository {
 
     public List<Vehicle> search(VehicleType type, VehicleStatus status, String model, Integer locationId, Integer systemId) {
         List<Vehicle> vehicles = new ArrayList<>();
-        StringBuilder sql = new StringBuilder("SELECT v.*, b.barcode, l.name as loc_name, s.name as sys_name FROM vehicles v " +
+        StringBuilder sql = new StringBuilder("SELECT v.*, b.barcode, l.name as loc_name, s.name as sys_name, ps.stall_number FROM vehicles v " +
                                               "JOIN barcodes b ON v.barcode_id = b.id " +
                                               "JOIN locations l ON v.location_id = l.id " +
                                               "JOIN car_rental_systems s ON l.system_id = s.id " +
+                                              "LEFT JOIN parking_stalls ps ON v.parking_stall_id = ps.id " +
                                               "WHERE 1=1");
         if (type != null) sql.append(" AND v.vehicle_type = ?");
         if (status != null) sql.append(" AND v.status = ?");
@@ -65,7 +69,11 @@ public class VehicleRepository {
     }
 
     public Vehicle findById(int id) {
-        String sql = "SELECT v.*, b.barcode FROM vehicles v JOIN barcodes b ON v.barcode_id = b.id WHERE v.id = ?";
+        String sql = "SELECT v.*, b.barcode, l.name as loc_name, s.name as sys_name, ps.stall_number FROM vehicles v " +
+                     "JOIN barcodes b ON v.barcode_id = b.id " +
+                     "JOIN locations l ON v.location_id = l.id " +
+                     "JOIN car_rental_systems s ON l.system_id = s.id " +
+                     "LEFT JOIN parking_stalls ps ON v.parking_stall_id = ps.id WHERE v.id = ?";
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setInt(1, id);
@@ -81,10 +89,11 @@ public class VehicleRepository {
     }
 
     public Vehicle findByBarcode(String barcode) {
-        String sql = "SELECT v.*, b.barcode, l.name as loc_name, s.name as sys_name FROM vehicles v " +
+        String sql = "SELECT v.*, b.barcode, l.name as loc_name, s.name as sys_name, ps.stall_number FROM vehicles v " +
                      "JOIN barcodes b ON v.barcode_id = b.id " +
                      "JOIN locations l ON v.location_id = l.id " +
                      "JOIN car_rental_systems s ON l.system_id = s.id " +
+                     "LEFT JOIN parking_stalls ps ON v.parking_stall_id = ps.id " +
                      "WHERE b.barcode = ?";
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -116,6 +125,19 @@ public class VehicleRepository {
         } catch (SQLException e) { e.printStackTrace(); }
     }
 
+    public void updateReturnState(int vehicleId, int newMileage, int fuelLevel, Integer parkingStallId, VehicleStatus status) {
+        String sql = "UPDATE vehicles SET mileage = ?, fuel_level = ?, parking_stall_id = ?, status = ? WHERE id = ?";
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setInt(1, newMileage);
+            pstmt.setInt(2, fuelLevel);
+            if (parkingStallId != null) pstmt.setInt(3, parkingStallId); else pstmt.setNull(3, Types.INTEGER);
+            pstmt.setInt(4, status.getValue());
+            pstmt.setInt(5, vehicleId);
+            pstmt.executeUpdate();
+        } catch (SQLException e) { e.printStackTrace(); }
+    }
+
     public int getOrCreateBarcode(String barcode) {
         String checkSql = "SELECT id FROM barcodes WHERE barcode = ?";
         try (Connection conn = DatabaseConnection.getConnection();
@@ -140,8 +162,8 @@ public class VehicleRepository {
     }
 
     public void create(Vehicle v) {
-        String sql = "INSERT INTO vehicles (location_id, parking_stall_id, barcode_id, vehicle_type, car_type, license_number, stock_number, passenger_capacity, has_sunroof, status, model, make, manufacturing_year, mileage, price_per_day) " +
-                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO vehicles (location_id, parking_stall_id, barcode_id, vehicle_type, car_type, license_number, stock_number, passenger_capacity, has_sunroof, status, model, make, manufacturing_year, mileage, price_per_day, image_path, transmission_type, fuel_type, fuel_level) " +
+                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             pstmt.setInt(1, v.getLocationId());
@@ -160,6 +182,10 @@ public class VehicleRepository {
             pstmt.setInt(13, v.getManufacturingYear());
             pstmt.setInt(14, v.getMileage());
             pstmt.setDouble(15, v.getPricePerDay());
+            pstmt.setString(16, v.getImagePath());
+            pstmt.setInt(17, v.getTransmissionType() != null ? v.getTransmissionType().getValue() : TransmissionType.AUTOMATIC.getValue());
+            pstmt.setInt(18, v.getFuelType() != null ? v.getFuelType().getValue() : FuelType.PETROL.getValue());
+            pstmt.setInt(19, v.getFuelLevel());
             
             pstmt.executeUpdate();
             try (ResultSet gk = pstmt.getGeneratedKeys()) {
@@ -169,7 +195,7 @@ public class VehicleRepository {
     }
 
     public void update(Vehicle v) {
-        String sql = "UPDATE vehicles SET location_id=?, parking_stall_id=?, vehicle_type=?, car_type=?, license_number=?, stock_number=?, passenger_capacity=?, has_sunroof=?, status=?, model=?, make=?, manufacturing_year=?, mileage=?, price_per_day=? WHERE id=?";
+        String sql = "UPDATE vehicles SET location_id=?, parking_stall_id=?, vehicle_type=?, car_type=?, license_number=?, stock_number=?, passenger_capacity=?, has_sunroof=?, status=?, model=?, make=?, manufacturing_year=?, mileage=?, price_per_day=?, image_path=?, transmission_type=?, fuel_type=?, fuel_level=? WHERE id=?";
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setInt(1, v.getLocationId());
@@ -186,7 +212,11 @@ public class VehicleRepository {
             pstmt.setInt(12, v.getManufacturingYear());
             pstmt.setInt(13, v.getMileage());
             pstmt.setDouble(14, v.getPricePerDay());
-            pstmt.setInt(15, v.getId());
+            pstmt.setString(15, v.getImagePath());
+            pstmt.setInt(16, v.getTransmissionType() != null ? v.getTransmissionType().getValue() : TransmissionType.AUTOMATIC.getValue());
+            pstmt.setInt(17, v.getFuelType() != null ? v.getFuelType().getValue() : FuelType.PETROL.getValue());
+            pstmt.setInt(18, v.getFuelLevel());
+            pstmt.setInt(19, v.getId());
             pstmt.executeUpdate();
         } catch (SQLException e) { e.printStackTrace(); }
     }
@@ -218,11 +248,77 @@ public class VehicleRepository {
         v.setManufacturingYear(rs.getInt("manufacturing_year"));
         v.setMileage(rs.getInt("mileage"));
         v.setPricePerDay(rs.getDouble("price_per_day"));
+        v.setImagePath(rs.getString("image_path"));
+        v.setTransmissionType(TransmissionType.fromInt(rs.getInt("transmission_type")));
+        v.setFuelType(FuelType.fromInt(rs.getInt("fuel_type")));
+        v.setFuelLevel(rs.getInt("fuel_level"));
         v.setBarcode(rs.getString("barcode"));
         v.setActive(rs.getBoolean("is_active"));
         try { v.setLocationName(rs.getString("loc_name")); } catch (Exception e) {}
         try { v.setSystemName(rs.getString("sys_name")); } catch (Exception e) {}
+        try { v.setParkingStallNumber(rs.getString("stall_number")); } catch (Exception e) {}
         return v;
+    }
+
+    public List<Vehicle> searchAvailableVehicles(Integer pickupLocationId, Integer returnLocationId,
+                                                 LocalDateTime pickupDate, LocalDateTime returnDate,
+                                                 VehicleType vehicleType, Double minPrice, Double maxPrice,
+                                                 TransmissionType transmissionType, FuelType fuelType,
+                                                 Integer passengerCapacity) {
+        List<Vehicle> vehicles = new ArrayList<>();
+        StringBuilder sql = new StringBuilder("SELECT v.*, b.barcode, l.name as loc_name, s.name as sys_name, ps.stall_number FROM vehicles v " +
+                "JOIN barcodes b ON v.barcode_id = b.id " +
+                "JOIN locations l ON v.location_id = l.id " +
+                "JOIN car_rental_systems s ON l.system_id = s.id " +
+                "LEFT JOIN parking_stalls ps ON v.parking_stall_id = ps.id " +
+                "WHERE v.is_active = TRUE AND v.status IN (1, 2) " +
+                "AND NOT EXISTS (SELECT 1 FROM vehicle_reservations r WHERE r.vehicle_id = v.id " +
+                "AND r.status IN (1, 2, 3, 7, 8) " +
+                "AND ? < r.due_date AND ? > r.pickup_date)");
+
+        if (pickupLocationId != null) sql.append(" AND v.location_id = ?");
+        if (vehicleType != null) sql.append(" AND v.vehicle_type = ?");
+        if (minPrice != null) sql.append(" AND v.price_per_day >= ?");
+        if (maxPrice != null) sql.append(" AND v.price_per_day <= ?");
+        if (transmissionType != null) sql.append(" AND v.transmission_type = ?");
+        if (fuelType != null) sql.append(" AND v.fuel_type = ?");
+        if (passengerCapacity != null) sql.append(" AND v.passenger_capacity >= ?");
+        sql.append(" ORDER BY v.price_per_day, v.make, v.model");
+
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql.toString())) {
+            int idx = 1;
+            pstmt.setTimestamp(idx++, Timestamp.valueOf(pickupDate));
+            pstmt.setTimestamp(idx++, Timestamp.valueOf(returnDate));
+            if (pickupLocationId != null) pstmt.setInt(idx++, pickupLocationId);
+            if (vehicleType != null) pstmt.setInt(idx++, vehicleType.getValue());
+            if (minPrice != null) pstmt.setDouble(idx++, minPrice);
+            if (maxPrice != null) pstmt.setDouble(idx++, maxPrice);
+            if (transmissionType != null) pstmt.setInt(idx++, transmissionType.getValue());
+            if (fuelType != null) pstmt.setInt(idx++, fuelType.getValue());
+            if (passengerCapacity != null) pstmt.setInt(idx++, passengerCapacity);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) vehicles.add(mapResultSetToVehicle(rs));
+            }
+        } catch (SQLException e) { e.printStackTrace(); }
+        return vehicles;
+    }
+
+    public boolean isAvailableForDateRange(int vehicleId, LocalDateTime pickupDate, LocalDateTime returnDate, Integer excludingReservationId) {
+        String sql = "SELECT COUNT(*) FROM vehicle_reservations WHERE vehicle_id = ? " +
+                "AND status IN (1, 2, 3, 7, 8) AND ? < due_date AND ? > pickup_date" +
+                (excludingReservationId != null ? " AND id <> ?" : "");
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setInt(1, vehicleId);
+            pstmt.setTimestamp(2, Timestamp.valueOf(pickupDate));
+            pstmt.setTimestamp(3, Timestamp.valueOf(returnDate));
+            if (excludingReservationId != null) pstmt.setInt(4, excludingReservationId);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                return rs.next() && rs.getInt(1) == 0;
+            }
+        } catch (SQLException e) { e.printStackTrace(); }
+        return false;
     }
 
     public List<String> getVehicleHistory(int vehicleId) {
@@ -288,7 +384,7 @@ public class VehicleRepository {
         String sql = "SELECT SUM(p.amount) as total_profit FROM payments p " +
                      "JOIN bills b ON p.bill_id = b.id " +
                      "JOIN vehicle_reservations r ON b.reservation_id = r.id " +
-                     "WHERE r.vehicle_id = ? AND p.status = 1"; // Status 1 = COMPLETED
+                     "WHERE r.vehicle_id = ? AND p.status IN (3, 9)";
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setInt(1, vehicleId);

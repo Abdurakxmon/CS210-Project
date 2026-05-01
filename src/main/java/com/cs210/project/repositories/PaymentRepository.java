@@ -66,6 +66,35 @@ public class PaymentRepository {
         return list;
     }
 
+    public BigDecimal getSuccessfulPaidAmount(int billId) {
+        String sql = "SELECT COALESCE(SUM(amount), 0) FROM payments WHERE bill_id = ? AND status IN (?, ?)";
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setInt(1, billId);
+            pstmt.setInt(2, PaymentStatus.COMPLETED.getValue());
+            pstmt.setInt(3, PaymentStatus.SETTLED.getValue());
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) return rs.getBigDecimal(1);
+            }
+        } catch (SQLException e) { e.printStackTrace(); }
+        return BigDecimal.ZERO;
+    }
+
+    public boolean hasFailedPayment(int billId) {
+        String sql = "SELECT COUNT(*) FROM payments WHERE bill_id = ? AND status IN (?, ?, ?)";
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setInt(1, billId);
+            pstmt.setInt(2, PaymentStatus.FAILED.getValue());
+            pstmt.setInt(3, PaymentStatus.DECLINED.getValue());
+            pstmt.setInt(4, PaymentStatus.CANCELLED.getValue());
+            try (ResultSet rs = pstmt.executeQuery()) {
+                return rs.next() && rs.getInt(1) > 0;
+            }
+        } catch (SQLException e) { e.printStackTrace(); }
+        return false;
+    }
+
     public List<Payment> findByMemberId(int memberId) {
         List<Payment> list = new ArrayList<>();
         String sql = "SELECT p.* FROM payments p " +

@@ -75,7 +75,7 @@ public class MemberRepository {
             conn.setAutoCommit(false);
 
             // 1. Insert Person
-            String sqlPerson = "INSERT INTO persons (name, email, phone, street_address, city, state, zipcode, country) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+            String sqlPerson = "INSERT INTO persons (name, email, phone, street_address, city, state, zipcode, country, birth_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
             PreparedStatement pstmtPerson = conn.prepareStatement(sqlPerson, Statement.RETURN_GENERATED_KEYS);
             pstmtPerson.setString(1, p.getName());
             pstmtPerson.setString(2, p.getEmail());
@@ -85,6 +85,7 @@ public class MemberRepository {
             pstmtPerson.setString(6, p.getState());
             pstmtPerson.setString(7, p.getZipcode());
             pstmtPerson.setString(8, p.getCountry());
+            if (p.getBirthDate() != null) pstmtPerson.setDate(9, Date.valueOf(p.getBirthDate())); else pstmtPerson.setNull(9, Types.DATE);
             pstmtPerson.executeUpdate();
             
             int personId;
@@ -124,6 +125,18 @@ public class MemberRepository {
         } finally {
             if (conn != null) try { conn.close(); } catch (SQLException e) { e.printStackTrace(); }
         }
+    }
+
+    public int findAccountIdByMemberId(int memberId) {
+        String sql = "SELECT account_id FROM members WHERE id = ?";
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setInt(1, memberId);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) return rs.getInt("account_id");
+            }
+        } catch (SQLException e) { e.printStackTrace(); }
+        return 0;
     }
 
     public List<Member> findAllMembers() {

@@ -9,6 +9,7 @@ public class VehicleReservation {
     private int memberId;
     private int vehicleId;
     private LocalDateTime creationDate;
+    private LocalDateTime pickupDate;
     private ReservationStatus status;
     private LocalDateTime dueDate;
     private LocalDateTime returnDate;
@@ -21,7 +22,10 @@ public class VehicleReservation {
     private String vehiclePlate;
     private String memberName;
     private String staffName;
+    private String pickupLocationName;
+    private String returnLocationName;
     private double amount;
+    private double paidAmount;
 
     public VehicleReservation() {}
 
@@ -32,6 +36,12 @@ public class VehicleReservation {
     public void setStaffName(String staffName) { this.staffName = staffName; }
     public double getAmount() { return amount; }
     public void setAmount(double amount) { this.amount = amount; }
+    public double getPaidAmount() { return paidAmount; }
+    public void setPaidAmount(double paidAmount) { this.paidAmount = paidAmount; }
+    public String getPickupLocationName() { return pickupLocationName; }
+    public void setPickupLocationName(String pickupLocationName) { this.pickupLocationName = pickupLocationName; }
+    public String getReturnLocationName() { return returnLocationName; }
+    public void setReturnLocationName(String returnLocationName) { this.returnLocationName = returnLocationName; }
 
     // Getters and Setters
     public int getId() { return id; }
@@ -44,6 +54,8 @@ public class VehicleReservation {
     public void setVehicleId(int vehicleId) { this.vehicleId = vehicleId; }
     public LocalDateTime getCreationDate() { return creationDate; }
     public void setCreationDate(LocalDateTime creationDate) { this.creationDate = creationDate; }
+    public LocalDateTime getPickupDate() { return pickupDate; }
+    public void setPickupDate(LocalDateTime pickupDate) { this.pickupDate = pickupDate; }
     public ReservationStatus getStatus() { return status; }
     public void setStatus(ReservationStatus status) { this.status = status; }
     public LocalDateTime getDueDate() { return dueDate; }

@@ -19,7 +19,7 @@ public class PaymentService {
         if (bill == null) throw new Exception("Bill not found.");
 
         payRepo.processPayment(bill.getId(), amount, type);
-        notifyRepo.create(reservationId, NotificationType.SYSTEM, "Payment of $" + amount + " received via " + type.getLabel());
+        notifyRepo.create(reservationId, NotificationType.PAYMENT_CONFIRMATION, "Payment of $" + amount + " received via " + type.getLabel());
     }
 
     public Bill getBill(int reservationId) {

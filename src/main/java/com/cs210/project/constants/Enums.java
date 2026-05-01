@@ -32,7 +32,7 @@ public class Enums {
     public enum ReservationStatus {
         WAITING(1, "Waiting"), PENDING(2, "Pending"), CONFIRMED(3, "Confirmed"), 
         COMPLETED(4, "Completed"), CANCELLED(5, "Cancelled"), NONE(6, "None"),
-        WAITING_FOR_INSPECTION(7, "Waiting for Inspection");
+        WAITING_FOR_INSPECTION(7, "Waiting for Inspection"), OVERDUE(8, "Overdue");
         private final int value;
         private final String label;
         ReservationStatus(int v, String l) { this.value = v; this.label = l; }
@@ -73,7 +73,9 @@ public class Enums {
     }
 
     public enum BillItemType {
-        BASE_CHARGE(1, "Base Charge"), ADDITIONAL_SERVICE(2, "Additional Service"), FINE(3, "Fine"), OTHER(4, "Other");
+        BASE_CHARGE(1, "Base Charge"), INSURANCE(2, "Insurance"), EQUIPMENT(3, "Equipment"),
+        SERVICE(4, "Service"), LATE_FEE(5, "Late Fee"), DAMAGE_FEE(6, "Damage Fee"),
+        FUEL_FEE(7, "Fuel Fee"), OTHER(8, "Other");
         private final int value;
         private final String label;
         BillItemType(int v, String l) { this.value = v; this.label = l; }
@@ -113,30 +115,42 @@ public class Enums {
     }
     
     public enum InsuranceType {
-        PERSONAL(1, "Personal"), BELONGING(2, "Belonging"), LIABILITY(3, "Liability");
+        BASIC(1, "Basic"), PERSONAL(2, "Personal"), BELONGINGS(3, "Belongings");
         private final int value;
         private final String label;
         InsuranceType(int v, String l) { this.value = v; this.label = l; }
         public int getValue() { return value; }
         public String getLabel() { return label; }
+        public static InsuranceType fromInt(int v) {
+            for (InsuranceType t : values()) if (t.value == v) return t;
+            return BASIC;
+        }
     }
 
     public enum EquipmentType {
-        NAVIGATION(1, "Navigation"), CHILD_SEAT(2, "Child Seat"), SKI_RACK(3, "Ski Rack");
+        NAVIGATION(1, "Navigation"), CHILD_SEAT(2, "Child Seat"), WIFI(3, "WiFi");
         private final int value;
         private final String label;
         EquipmentType(int v, String l) { this.value = v; this.label = l; }
         public int getValue() { return value; }
         public String getLabel() { return label; }
+        public static EquipmentType fromInt(int v) {
+            for (EquipmentType t : values()) if (t.value == v) return t;
+            return NAVIGATION;
+        }
     }
 
     public enum ServiceType {
-        DRIVER(1, "Driver"), ROADSIDE_ASSISTANCE(2, "Roadside Assistance"), WIFI(3, "WiFi");
+        ROADSIDE_ASSISTANCE(1, "Roadside Assistance"), ADDITIONAL_DRIVER(2, "Additional Driver");
         private final int value;
         private final String label;
         ServiceType(int v, String l) { this.value = v; this.label = l; }
         public int getValue() { return value; }
         public String getLabel() { return label; }
+        public static ServiceType fromInt(int v) {
+            for (ServiceType t : values()) if (t.value == v) return t;
+            return ROADSIDE_ASSISTANCE;
+        }
     }
 
     public enum PaymentType {
@@ -153,7 +167,18 @@ public class Enums {
     }
 
     public enum NotificationType {
-        SMS(1, "SMS"), EMAIL(2, "Email"), SYSTEM(3, "System");
+        RESERVATION_CONFIRMATION(1, "Reservation Confirmation"),
+        RESERVATION_REMINDER(2, "Reservation Reminder"),
+        CANCELLATION_NOTIFICATION(3, "Cancellation Notification"),
+        PICKUP_REMINDER(4, "Pickup Reminder"),
+        DUE_DATE_REMINDER(5, "Due Date Reminder"),
+        OVERDUE_WARNING(6, "Overdue Warning"),
+        RETURN_CONFIRMATION(7, "Return Confirmation"),
+        PAYMENT_CONFIRMATION(8, "Payment Confirmation"),
+        LATE_FEE_ADDED(9, "Late Fee Added"),
+        DAMAGE_FEE_ADDED(10, "Damage Fee Added"),
+        FUEL_FEE_ADDED(11, "Fuel Fee Added"),
+        SYSTEM(12, "System");
         private final int value;
         private final String label;
         NotificationType(int v, String l) { this.value = v; this.label = l; }
@@ -162,6 +187,32 @@ public class Enums {
         public static NotificationType fromInt(int v) {
             for (NotificationType t : values()) if (t.value == v) return t;
             return SYSTEM;
+        }
+    }
+
+    public enum TransmissionType {
+        AUTOMATIC(1, "Automatic"), MANUAL(2, "Manual");
+        private final int value;
+        private final String label;
+        TransmissionType(int v, String l) { this.value = v; this.label = l; }
+        public int getValue() { return value; }
+        public String getLabel() { return label; }
+        public static TransmissionType fromInt(int v) {
+            for (TransmissionType t : values()) if (t.value == v) return t;
+            return AUTOMATIC;
+        }
+    }
+
+    public enum FuelType {
+        PETROL(1, "Petrol"), DIESEL(2, "Diesel"), HYBRID(3, "Hybrid"), ELECTRIC(4, "Electric");
+        private final int value;
+        private final String label;
+        FuelType(int v, String l) { this.value = v; this.label = l; }
+        public int getValue() { return value; }
+        public String getLabel() { return label; }
+        public static FuelType fromInt(int v) {
+            for (FuelType t : values()) if (t.value == v) return t;
+            return PETROL;
         }
     }
 }

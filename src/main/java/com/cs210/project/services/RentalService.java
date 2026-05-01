@@ -16,11 +16,15 @@ public class RentalService {
     private final BillRepository billRepo = new BillRepository();
     private final NotificationRepository notifyRepo = new NotificationRepository();
     private final PaymentRepository paymentRepo = new PaymentRepository();
+    private final ReturnInspectionRepository inspectionRepo = new ReturnInspectionRepository();
+    private final CustomerEligibilityService eligibilityService = new CustomerEligibilityService();
 
     public void pickupVehicle(String reservationNumber, int staffAccountId) throws Exception {
         VehicleReservation res = resRepo.findByNumber(reservationNumber);
         if (res == null) throw new Exception("Reservation not found.");
         if (res.getStatus() != ReservationStatus.CONFIRMED) throw new Exception("Reservation is not in CONFIRMED status.");
+        eligibilityService.validateCustomerEligibility(res.getMemberId());
+        eligibilityService.validateNoFailedPaymentForReservation(res.getId());
 
         // 1. Check/Create Bill
         Bill bill = billRepo.findByReservationId(res.getId());
@@ -31,7 +35,7 @@ public class RentalService {
             
             // Calculate base price
             com.cs210.project.models.Vehicle v = vehicleRepo.findById(res.getVehicleId());
-            long days = java.time.Duration.between(res.getCreationDate(), res.getDueDate()).toDays();
+            long days = java.time.temporal.ChronoUnit.DAYS.between(res.getPickupDate().toLocalDate(), res.getDueDate().toLocalDate());
             if (days < 1) days = 1;
             BigDecimal baseAmount = BigDecimal.valueOf(v.getPricePerDay() * days);
             
@@ -40,9 +44,7 @@ public class RentalService {
         }
 
         // 2. Check Payment Status
-        BigDecimal paid = paymentRepo.findByBillId(bill.getId()).stream()
-            .map(com.cs210.project.models.Payment::getAmount)
-            .reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal paid = paymentRepo.getSuccessfulPaidAmount(bill.getId());
             
         if (paid.compareTo(bill.getTotalAmount()) < 0) {
             throw new Exception("Payment required. Remaining balance: $" + bill.getTotalAmount().subtract(paid));
@@ -53,7 +55,7 @@ public class RentalService {
         resRepo.updateStatus(res.getId(), ReservationStatus.PENDING); // Mark as active
 
         logRepo.addLog(res.getVehicleId(), VehicleLogType.OTHER, "Vehicle picked up for reservation " + reservationNumber + ". Bill prepared.", staffAccountId);
-        notifyRepo.create(res.getId(), NotificationType.SYSTEM, "Vehicle picked up. Your rental has started!");
+        notifyRepo.create(res.getId(), NotificationType.PICKUP_REMINDER, "Vehicle picked up. Your rental has started!");
     }
 
     public void initiateReturn(String reservationNumber) throws Exception {
@@ -66,6 +68,13 @@ public class RentalService {
     }
 
     public void returnVehicle(String reservationNumber, int staffAccountId, int newMileage, String conditionLog, BigDecimal manualFine) throws Exception {
+        returnVehicle(reservationNumber, staffAccountId, newMileage, 100, conditionLog, manualFine, BigDecimal.ZERO, true, false, null, null);
+    }
+
+    public void returnVehicle(String reservationNumber, int staffAccountId, int newMileage, int fuelLevel,
+                              String damageDescription, BigDecimal damageFee, BigDecimal fuelFee,
+                              boolean cleaned, boolean maintenanceRequired, Integer parkingStallId,
+                              String notes) throws Exception {
         VehicleReservation res = resRepo.findByNumber(reservationNumber);
         if (res == null) throw new Exception("Reservation not found.");
         if (res.getStatus() == ReservationStatus.COMPLETED) throw new Exception("Vehicle already returned.");
@@ -85,28 +94,53 @@ public class RentalService {
             pstmt.executeUpdate();
         }
 
-        // 2. Update Vehicle Status and Mileage
-        vehicleRepo.updateStatus(res.getVehicleId(), VehicleStatus.AVAILABLE);
-        vehicleRepo.updateMileage(res.getVehicleId(), newMileage);
+        com.cs210.project.models.ReturnInspection inspection = new com.cs210.project.models.ReturnInspection();
+        inspection.setReservationId(res.getId());
+        inspection.setVehicleId(res.getVehicleId());
+        inspection.setWorkerAccountId(staffAccountId);
+        inspection.setInspectionDate(now);
+        inspection.setMileage(newMileage);
+        inspection.setFuelLevel(fuelLevel);
+        inspection.setDamageDescription(damageDescription);
+        inspection.setDamageFee(damageFee != null ? damageFee : BigDecimal.ZERO);
+        inspection.setFuelFee(fuelFee != null ? fuelFee : BigDecimal.ZERO);
+        inspection.setCleaned(cleaned);
+        inspection.setMaintenanceRequired(maintenanceRequired);
+        inspection.setParkingStallId(parkingStallId);
+        inspection.setNotes(notes);
+        inspectionRepo.create(inspection);
+
+        VehicleStatus finalVehicleStatus = maintenanceRequired || !cleaned ? VehicleStatus.BEING_SERVICED : VehicleStatus.AVAILABLE;
+        vehicleRepo.updateReturnState(res.getVehicleId(), newMileage, fuelLevel, parkingStallId, finalVehicleStatus);
         
         // 3. Handle Fines
         Bill bill = billRepo.findByReservationId(res.getId());
         if (bill != null) {
             // Late return fine
-            if (now.isAfter(res.getDueDate())) {
-                billRepo.addItem(bill.getId(), BillItemType.FINE, new BigDecimal("25.00"), "Late Return Fine");
+            if (now.isAfter(res.getDueDate()) && !billRepo.hasItem(bill.getId(), BillItemType.LATE_FEE, "Late Return Fine")) {
+                long lateDays = Math.max(1, java.time.temporal.ChronoUnit.DAYS.between(res.getDueDate().toLocalDate(), now.toLocalDate()));
+                BigDecimal lateFee = new BigDecimal("25.00").multiply(BigDecimal.valueOf(lateDays));
+                billRepo.addItem(bill.getId(), BillItemType.LATE_FEE, lateFee, "Late Return Fine");
+                notifyRepo.create(res.getId(), NotificationType.LATE_FEE_ADDED, "Late fee of $" + lateFee + " has been added to your bill.");
             }
             // Manual assessment fine
-            if (manualFine != null && manualFine.compareTo(BigDecimal.ZERO) > 0) {
-                billRepo.addItem(bill.getId(), BillItemType.FINE, manualFine, "Damage/Other Assessment Fine");
-                notifyRepo.create(res.getId(), NotificationType.SYSTEM, "A fine of $" + manualFine + " has been added to your bill for damage/other issues.");
+            if (damageFee != null && damageFee.compareTo(BigDecimal.ZERO) > 0) {
+                billRepo.addItem(bill.getId(), BillItemType.DAMAGE_FEE, damageFee, "Damage Fee");
+                notifyRepo.create(res.getId(), NotificationType.DAMAGE_FEE_ADDED, "Damage fee of $" + damageFee + " has been added to your bill.");
+            }
+            if (fuelFee != null && fuelFee.compareTo(BigDecimal.ZERO) > 0) {
+                billRepo.addItem(bill.getId(), BillItemType.FUEL_FEE, fuelFee, "Fuel Fee");
+                notifyRepo.create(res.getId(), NotificationType.FUEL_FEE_ADDED, "Fuel fee of $" + fuelFee + " has been added to your bill.");
             }
             billRepo.updateTotal(bill.getId());
         }
 
         // 4. Log Condition and Maintenance
-        logRepo.addLog(res.getVehicleId(), VehicleLogType.CLEANING_SERVICE, "Vehicle returned. Condition: " + conditionLog, staffAccountId);
-        notifyRepo.create(res.getId(), NotificationType.SYSTEM, "Vehicle returned successfully. Mileage updated to " + newMileage + ". Thank you!");
+        logRepo.addLog(res.getVehicleId(), VehicleLogType.CLEANING_SERVICE,
+                "Vehicle returned. Mileage: " + newMileage + ", Fuel: " + fuelLevel + "%, Cleaned: " + cleaned +
+                        ", Maintenance required: " + maintenanceRequired + ", Damage: " + damageDescription,
+                staffAccountId);
+        notifyRepo.create(res.getId(), NotificationType.RETURN_CONFIRMATION, "Vehicle returned successfully. Mileage updated to " + newMileage + ". Thank you!");
     }
 
     public com.cs210.project.models.VehicleReservation findReservationByBarcode(String barcode) throws Exception {

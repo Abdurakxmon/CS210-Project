@@ -28,6 +28,7 @@ public class ReservationsListView extends VBox {
     private final MemberRepository memberRepo = new MemberRepository();
     private final VehicleRepository vehicleRepo = new VehicleRepository();
     private final LocationRepository locationRepo = new LocationRepository();
+    private final ParkingStallRepository stallRepo = new ParkingStallRepository();
     private final BillRepository billRepo = new BillRepository();
     private final PaymentRepository paymentRepo = new PaymentRepository();
     
@@ -58,8 +59,14 @@ public class ReservationsListView extends VBox {
 
         TableColumn<VehicleReservation, String> dueCol = new TableColumn<>("Due Date");
         dueCol.setCellValueFactory(new PropertyValueFactory<>("dueDate"));
+        TableColumn<VehicleReservation, String> pickupCol = new TableColumn<>("Pickup Date");
+        pickupCol.setCellValueFactory(new PropertyValueFactory<>("pickupDate"));
+        TableColumn<VehicleReservation, Double> amountCol = new TableColumn<>("Total");
+        amountCol.setCellValueFactory(new PropertyValueFactory<>("amount"));
+        TableColumn<VehicleReservation, Double> paidCol = new TableColumn<>("Paid");
+        paidCol.setCellValueFactory(new PropertyValueFactory<>("paidAmount"));
 
-        table.getColumns().addAll(resNumCol, vehicleCol, statusCol, dueCol);
+        table.getColumns().addAll(resNumCol, vehicleCol, statusCol, pickupCol, dueCol, amountCol, paidCol);
 
         HBox actions = new HBox(10);
         Button refreshBtn = new Button("Refresh");
@@ -154,21 +161,7 @@ public class ReservationsListView extends VBox {
                 mileageDialog.setHeaderText("Enter Current Mileage and Condition");
                 mileageDialog.setContentText("Current Mileage:");
                 
-                mileageDialog.showAndWait().ifPresent(mileage -> {
-                    TextInputDialog conditionDialog = new TextInputDialog("Good");
-                    conditionDialog.setTitle("Return Vehicle");
-                    conditionDialog.setHeaderText("Vehicle Condition");
-                    conditionDialog.setContentText("Notes:");
-                    
-                    conditionDialog.showAndWait().ifPresent(condition -> {
-                        try {
-                            rentalService.returnVehicle(selected.getReservationNumber(), Session.getAccount().getId(), Integer.parseInt(mileage), condition, java.math.BigDecimal.ZERO);
-                            loadData();
-                        } catch (Exception ex) {
-                            new Alert(Alert.AlertType.ERROR, ex.getMessage()).show();
-                        }
-                    });
-                });
+                mileageDialog.showAndWait().ifPresent(mileage -> showWorkerInspectionDialog(selected, mileage));
             }
         });
 
@@ -198,6 +191,7 @@ public class ReservationsListView extends VBox {
         ComboBox<Location> pickupCombo = new ComboBox<>(FXCollections.observableArrayList(locationRepo.findAll()));
         ComboBox<Location> returnCombo = new ComboBox<>(FXCollections.observableArrayList(locationRepo.findAll()));
         DatePicker dueDatePicker = new DatePicker();
+        DatePicker pickupDatePicker = new DatePicker();
         ComboBox<ReservationStatus> statusCombo = new ComboBox<>(FXCollections.observableArrayList(ReservationStatus.values()));
 
         if (res != null) {
@@ -206,10 +200,12 @@ public class ReservationsListView extends VBox {
             for (Vehicle v : vehicleCombo.getItems()) if (v.getId() == res.getVehicleId()) { vehicleCombo.setValue(v); break; }
             for (Location l : pickupCombo.getItems()) if (l.getId() == res.getPickupLocationId()) { pickupCombo.setValue(l); break; }
             for (Location l : returnCombo.getItems()) if (l.getId() == res.getReturnLocationId()) { returnCombo.setValue(l); break; }
+            pickupDatePicker.setValue(res.getPickupDate() != null ? res.getPickupDate().toLocalDate() : res.getCreationDate().toLocalDate());
             dueDatePicker.setValue(res.getDueDate().toLocalDate());
             statusCombo.setValue(res.getStatus());
         } else {
             statusCombo.setValue(ReservationStatus.CONFIRMED);
+            pickupDatePicker.setValue(java.time.LocalDate.now().plusDays(1));
         }
 
         grid.add(new Label("Member:"), 0, 0);
@@ -220,16 +216,18 @@ public class ReservationsListView extends VBox {
         grid.add(pickupCombo, 1, 2);
         grid.add(new Label("Return Loc:"), 0, 3);
         grid.add(returnCombo, 1, 3);
-        grid.add(new Label("Due Date:"), 0, 4);
-        grid.add(dueDatePicker, 1, 4);
-        grid.add(new Label("Status:"), 0, 5);
-        grid.add(statusCombo, 1, 5);
+        grid.add(new Label("Pickup Date:"), 0, 4);
+        grid.add(pickupDatePicker, 1, 4);
+        grid.add(new Label("Due Date:"), 0, 5);
+        grid.add(dueDatePicker, 1, 5);
+        grid.add(new Label("Status:"), 0, 6);
+        grid.add(statusCombo, 1, 6);
 
         Button saveBtn = new Button("Save");
         saveBtn.setOnAction(e -> {
             try {
                 if (memberCombo.getValue() == null || vehicleCombo.getValue() == null || 
-                    pickupCombo.getValue() == null || returnCombo.getValue() == null || dueDatePicker.getValue() == null) {
+                    pickupCombo.getValue() == null || returnCombo.getValue() == null || pickupDatePicker.getValue() == null || dueDatePicker.getValue() == null) {
                     throw new Exception("Please fill all fields.");
                 }
 
@@ -239,6 +237,7 @@ public class ReservationsListView extends VBox {
                         vehicleCombo.getValue().getId(),
                         pickupCombo.getValue().getId(),
                         returnCombo.getValue().getId(),
+                        pickupDatePicker.getValue().atTime(10, 0),
                         dueDatePicker.getValue().atTime(12, 0),
                         new java.util.ArrayList<>(),
                         new java.util.ArrayList<>(),
@@ -249,6 +248,7 @@ public class ReservationsListView extends VBox {
                     res.setVehicleId(vehicleCombo.getValue().getId());
                     res.setPickupLocationId(pickupCombo.getValue().getId());
                     res.setReturnLocationId(returnCombo.getValue().getId());
+                    res.setPickupDate(pickupDatePicker.getValue().atTime(10, 0));
                     res.setDueDate(dueDatePicker.getValue().atTime(12, 0));
                     res.setStatus(statusCombo.getValue());
                     resService.updateReservation(res);
@@ -260,7 +260,7 @@ public class ReservationsListView extends VBox {
             }
         });
 
-        grid.add(saveBtn, 1, 6);
+        grid.add(saveBtn, 1, 7);
         dialog.setScene(new Scene(grid));
         dialog.showAndWait();
     }
@@ -284,13 +284,17 @@ public class ReservationsListView extends VBox {
         grid.add(new Label("Member:"), 0, r); grid.add(new Label(res.getMemberName()), 1, r++);
         grid.add(new Label("Vehicle:"), 0, r); grid.add(new Label(res.getVehicleMake() + " " + res.getVehicleModel() + " [" + res.getVehiclePlate() + "]"), 1, r++);
         grid.add(new Label("Status:"), 0, r); grid.add(new Label(res.getStatus().getLabel()), 1, r++);
+        grid.add(new Label("Pickup:"), 0, r); grid.add(new Label(res.getPickupDate() != null ? res.getPickupDate().toString() : "N/A"), 1, r++);
+        grid.add(new Label("Due:"), 0, r); grid.add(new Label(res.getDueDate() != null ? res.getDueDate().toString() : "N/A"), 1, r++);
+        grid.add(new Label("Pickup Location:"), 0, r); grid.add(new Label(res.getPickupLocationName() != null ? res.getPickupLocationName() : String.valueOf(res.getPickupLocationId())), 1, r++);
+        grid.add(new Label("Return Location:"), 0, r); grid.add(new Label(res.getReturnLocationName() != null ? res.getReturnLocationName() : String.valueOf(res.getReturnLocationId())), 1, r++);
         
         Bill bill = billRepo.findByReservationId(res.getId());
         String costStr = "N/A";
         String paidStr = "N/A";
         if (bill != null) {
             costStr = String.format("$%.2f", bill.getTotalAmount());
-            BigDecimal paid = paymentRepo.findByBillId(bill.getId()).stream().map(Payment::getAmount).reduce(BigDecimal.ZERO, BigDecimal::add);
+            BigDecimal paid = paymentRepo.getSuccessfulPaidAmount(bill.getId());
             paidStr = String.format("$%.2f", paid);
         }
         grid.add(new Label("Total Cost:"), 0, r); grid.add(new Label(costStr), 1, r++);
@@ -307,6 +311,69 @@ public class ReservationsListView extends VBox {
         layout.getChildren().addAll(header, new Separator(), grid, new Separator(), closeBtn);
         dialog.setScene(new Scene(layout));
         dialog.show();
+    }
+
+    private void showWorkerInspectionDialog(VehicleReservation reservation, String mileageValue) {
+        Stage dialog = new Stage();
+        dialog.initModality(Modality.APPLICATION_MODAL);
+        dialog.setTitle("Return Inspection");
+
+        GridPane grid = new GridPane();
+        grid.setPadding(new Insets(20));
+        grid.setHgap(10);
+        grid.setVgap(10);
+
+        TextField mileageField = new TextField(mileageValue);
+        TextField fuelLevelField = new TextField("100");
+        TextArea damageNotes = new TextArea();
+        damageNotes.setPrefRowCount(3);
+        TextField damageFeeField = new TextField("0.00");
+        TextField fuelFeeField = new TextField("0.00");
+        CheckBox cleanedCheck = new CheckBox("Cleaned");
+        cleanedCheck.setSelected(true);
+        CheckBox maintenanceCheck = new CheckBox("Maintenance Required");
+        ComboBox<ParkingStall> stallCombo = new ComboBox<>(FXCollections.observableArrayList(
+                stallRepo.findAvailableStalls(reservation.getReturnLocationId())));
+        TextArea notesArea = new TextArea();
+        notesArea.setPrefRowCount(3);
+
+        int row = 0;
+        grid.add(new Label("Mileage:"), 0, row); grid.add(mileageField, 1, row++);
+        grid.add(new Label("Fuel Level %:"), 0, row); grid.add(fuelLevelField, 1, row++);
+        grid.add(new Label("Damage Notes:"), 0, row); grid.add(damageNotes, 1, row++);
+        grid.add(new Label("Damage Fee:"), 0, row); grid.add(damageFeeField, 1, row++);
+        grid.add(new Label("Fuel Fee:"), 0, row); grid.add(fuelFeeField, 1, row++);
+        grid.add(cleanedCheck, 1, row++);
+        grid.add(maintenanceCheck, 1, row++);
+        grid.add(new Label("Parking Stall:"), 0, row); grid.add(stallCombo, 1, row++);
+        grid.add(new Label("Notes:"), 0, row); grid.add(notesArea, 1, row++);
+
+        Button saveBtn = new Button("Complete Inspection");
+        saveBtn.setOnAction(e -> {
+            try {
+                rentalService.returnVehicle(
+                        reservation.getReservationNumber(),
+                        Session.getAccount().getId(),
+                        Integer.parseInt(mileageField.getText()),
+                        Integer.parseInt(fuelLevelField.getText()),
+                        damageNotes.getText(),
+                        new BigDecimal(damageFeeField.getText()),
+                        new BigDecimal(fuelFeeField.getText()),
+                        cleanedCheck.isSelected(),
+                        maintenanceCheck.isSelected(),
+                        stallCombo.getValue() != null ? stallCombo.getValue().getId() : null,
+                        notesArea.getText());
+                dialog.close();
+                loadData();
+            } catch (Exception ex) {
+                new Alert(Alert.AlertType.ERROR, ex.getMessage()).show();
+            }
+        });
+
+        VBox root = new VBox(10, grid, saveBtn);
+        root.setPadding(new Insets(10));
+        dialog.setScene(new Scene(root));
+        dialog.showAndWait();
     }
 
     private void loadData() {

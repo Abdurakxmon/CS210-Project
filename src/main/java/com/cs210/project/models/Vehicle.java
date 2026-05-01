@@ -1,6 +1,8 @@
 package com.cs210.project.models;
 
 import com.cs210.project.constants.Enums.CarType;
+import com.cs210.project.constants.Enums.FuelType;
+import com.cs210.project.constants.Enums.TransmissionType;
 import com.cs210.project.constants.Enums.VehicleType;
 import com.cs210.project.constants.VehicleStatus;
 
@@ -21,17 +23,32 @@ public class Vehicle {
     private int manufacturingYear;
     private int mileage;
     private double pricePerDay;
+    private String imagePath;
+    private TransmissionType transmissionType;
+    private FuelType fuelType;
+    private int fuelLevel = 100;
 
     // Associated objects
     private String barcode; // For display convenience
     private String locationName;
     private String systemName;
+    private String parkingStallNumber;
     private boolean isActive;
 
     public Vehicle() {}
 
     public double getPricePerDay() { return pricePerDay; }
     public void setPricePerDay(double pricePerDay) { this.pricePerDay = pricePerDay; }
+    public String getImagePath() { return imagePath; }
+    public void setImagePath(String imagePath) { this.imagePath = imagePath; }
+    public TransmissionType getTransmissionType() { return transmissionType; }
+    public void setTransmissionType(TransmissionType transmissionType) { this.transmissionType = transmissionType; }
+    public FuelType getFuelType() { return fuelType; }
+    public void setFuelType(FuelType fuelType) { this.fuelType = fuelType; }
+    public int getFuelLevel() { return fuelLevel; }
+    public void setFuelLevel(int fuelLevel) { this.fuelLevel = fuelLevel; }
+    public String getParkingStallNumber() { return parkingStallNumber; }
+    public void setParkingStallNumber(String parkingStallNumber) { this.parkingStallNumber = parkingStallNumber; }
 
     // Getters and Setters
     public boolean isActive() { return isActive; }

@@ -45,7 +45,7 @@ public class BillRepository {
     }
 
     public void updateTotal(int billId) {
-        String sql = "UPDATE bills b SET total_amount = (SELECT SUM(amount) FROM bill_items WHERE bill_id = ?) WHERE b.id = ?";
+        String sql = "UPDATE bills b SET total_amount = COALESCE((SELECT SUM(amount) FROM bill_items WHERE bill_id = ?), 0) WHERE b.id = ?";
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setInt(1, billId);
@@ -94,7 +94,21 @@ public class BillRepository {
         } catch (SQLException e) { e.printStackTrace(); }
     }
 
-    private List<BillItem> findItemsByBillId(int billId) {
+    public boolean hasItem(int billId, BillItemType type, String serviceName) {
+        String sql = "SELECT COUNT(*) FROM bill_items WHERE bill_id = ? AND item_type = ? AND service_name = ?";
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setInt(1, billId);
+            pstmt.setInt(2, type.getValue());
+            pstmt.setString(3, serviceName);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                return rs.next() && rs.getInt(1) > 0;
+            }
+        } catch (SQLException e) { e.printStackTrace(); }
+        return false;
+    }
+
+    public List<BillItem> findItemsByBillId(int billId) {
         List<BillItem> items = new ArrayList<>();
         String sql = "SELECT * FROM bill_items WHERE bill_id = ?";
         try (Connection conn = DatabaseConnection.getConnection();

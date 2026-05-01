@@ -22,6 +22,19 @@ public class NotificationRepository {
         } catch (SQLException e) { e.printStackTrace(); }
     }
 
+    public boolean exists(int reservationId, NotificationType type) {
+        String sql = "SELECT COUNT(*) FROM notifications WHERE reservation_id = ? AND notification_type = ?";
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setInt(1, reservationId);
+            pstmt.setInt(2, type.getValue());
+            try (ResultSet rs = pstmt.executeQuery()) {
+                return rs.next() && rs.getInt(1) > 0;
+            }
+        } catch (SQLException e) { e.printStackTrace(); }
+        return false;
+    }
+
     public List<Notification> findByMemberId(int memberId) {
         List<Notification> list = new ArrayList<>();
         String sql = "SELECT n.* FROM notifications n " +

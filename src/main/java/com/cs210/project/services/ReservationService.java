@@ -20,17 +20,36 @@ public class ReservationService {
     private final EquipmentRepository equipmentRepo = new EquipmentRepository();
     private final InsuranceRepository insuranceRepo = new InsuranceRepository();
     private final ServiceRepository serviceRepo = new ServiceRepository();
+    private final VehicleLogRepository logRepo = new VehicleLogRepository();
+    private final CustomerEligibilityService eligibilityService = new CustomerEligibilityService();
 
     public String createReservation(int memberId, int vehicleId, int pickupLoc, int returnLoc, LocalDateTime dueDate,
                                     List<InsuranceType> insurances, List<EquipmentType> equipments, List<ServiceType> services) throws Exception {
+        return createReservation(memberId, vehicleId, pickupLoc, returnLoc, LocalDateTime.now().plusDays(1), dueDate,
+                insurances, equipments, services);
+    }
+
+    public String createReservation(int memberId, int vehicleId, int pickupLoc, int returnLoc,
+                                    LocalDateTime pickupDate, LocalDateTime returnDate,
+                                    List<InsuranceType> insurances, List<EquipmentType> equipments,
+                                    List<ServiceType> services) throws Exception {
+        if (pickupDate == null || returnDate == null || !returnDate.isAfter(pickupDate)) {
+            throw new Exception("Pickup and return dates are required, and return must be after pickup.");
+        }
+
+        eligibilityService.validateCustomerEligibility(memberId);
+
         Vehicle v = vehicleRepo.findById(vehicleId);
-        if (v == null || v.getStatus() != VehicleStatus.AVAILABLE) {
-            throw new Exception("Vehicle is not available for reservation.");
+        if (v == null || !v.isActive()) {
+            throw new Exception("Vehicle is not available.");
+        }
+        if (!vehicleRepo.isAvailableForDateRange(vehicleId, pickupDate, returnDate, null)) {
+            throw new Exception("Vehicle is already booked for the selected dates.");
         }
 
         String resNumber = resRepo.generateReservationNumber();
         
-        String sql = "INSERT INTO vehicle_reservations (reservation_number, member_id, vehicle_id, creation_date, status, due_date, pickup_location_id, return_location_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO vehicle_reservations (reservation_number, member_id, vehicle_id, creation_date, pickup_date, status, due_date, pickup_location_id, return_location_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
         
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
@@ -39,10 +58,11 @@ public class ReservationService {
             pstmt.setInt(2, memberId);
             pstmt.setInt(3, vehicleId);
             pstmt.setTimestamp(4, Timestamp.valueOf(LocalDateTime.now()));
-            pstmt.setInt(5, ReservationStatus.CONFIRMED.getValue());
-            pstmt.setTimestamp(6, Timestamp.valueOf(dueDate));
-            pstmt.setInt(7, pickupLoc);
-            pstmt.setInt(8, returnLoc);
+            pstmt.setTimestamp(5, Timestamp.valueOf(pickupDate));
+            pstmt.setInt(6, ReservationStatus.CONFIRMED.getValue());
+            pstmt.setTimestamp(7, Timestamp.valueOf(returnDate));
+            pstmt.setInt(8, pickupLoc);
+            pstmt.setInt(9, returnLoc);
             pstmt.executeUpdate();
 
             int resId;
@@ -50,57 +70,55 @@ public class ReservationService {
                 if (rs.next()) resId = rs.getInt(1); else throw new SQLException("Reservation failed");
             }
 
-            // Update Vehicle Status
-            vehicleRepo.updateStatus(vehicleId, VehicleStatus.RESERVED);
-
             // Create Initial Bill
             com.cs210.project.models.Bill bill = new com.cs210.project.models.Bill();
             bill.setReservationId(resId);
             billRepo.create(bill);
             
             // 1. Base Charge
-            long days = java.time.Duration.between(LocalDateTime.now(), dueDate).toDays();
+            long days = java.time.temporal.ChronoUnit.DAYS.between(pickupDate.toLocalDate(), returnDate.toLocalDate());
             if (days < 1) days = 1;
             BigDecimal baseAmount = BigDecimal.valueOf(v.getPricePerDay() * days);
             billRepo.addItem(bill.getId(), BillItemType.BASE_CHARGE, baseAmount, "Base Rental Charge (" + days + " days)");
 
             // 2. Add Insurances
             for (InsuranceType type : insurances) {
-                BigDecimal price = new BigDecimal("15.00"); // Standard price
+                BigDecimal price = insurancePrice(type);
                 com.cs210.project.models.RentalInsurance ri = new com.cs210.project.models.RentalInsurance();
                 ri.setReservationId(resId);
                 ri.setInsuranceType(type);
                 ri.setPrice(price);
                 insuranceRepo.add(ri);
-                billRepo.addItem(bill.getId(), BillItemType.OTHER, price, "Insurance: " + type.name());
+                billRepo.addItem(bill.getId(), BillItemType.INSURANCE, price, "Insurance: " + type.getLabel());
             }
 
             // 3. Add Equipments
             for (EquipmentType type : equipments) {
-                BigDecimal price = new BigDecimal("10.00");
+                BigDecimal price = equipmentPrice(type);
                 com.cs210.project.models.Equipment eq = new com.cs210.project.models.Equipment();
                 eq.setReservationId(resId);
                 eq.setEquipmentType(type);
                 eq.setPrice(price);
                 equipmentRepo.add(eq);
-                billRepo.addItem(bill.getId(), BillItemType.OTHER, price, "Equipment: " + type.name());
+                billRepo.addItem(bill.getId(), BillItemType.EQUIPMENT, price, "Equipment: " + type.getLabel());
             }
 
             // 4. Add Services
             for (ServiceType type : services) {
-                BigDecimal price = new BigDecimal("20.00");
+                BigDecimal price = servicePrice(type);
                 com.cs210.project.models.Service s = new com.cs210.project.models.Service();
                 s.setReservationId(resId);
                 s.setServiceType(type);
                 s.setPrice(price);
                 serviceRepo.add(s);
-                billRepo.addItem(bill.getId(), BillItemType.OTHER, price, "Service: " + type.name());
+                billRepo.addItem(bill.getId(), BillItemType.SERVICE, price, "Service: " + type.getLabel());
             }
 
             billRepo.updateTotal(bill.getId());
 
             // Create Notification
-            notifyRepo.create(resId, NotificationType.SYSTEM, "Reservation " + resNumber + " confirmed for " + v.getMake() + " " + v.getModel());
+            notifyRepo.create(resId, NotificationType.RESERVATION_CONFIRMATION, "Reservation " + resNumber + " confirmed for " + v.getMake() + " " + v.getModel());
+            logRepo.addLog(vehicleId, VehicleLogType.OTHER, "Reservation " + resNumber + " created for " + pickupDate + " to " + returnDate + ".", null);
 
             return resNumber;
         }
@@ -127,8 +145,8 @@ public class ReservationService {
                     if (status > 3) throw new Exception("Cannot cancel completed or already cancelled reservation.");
                     
                     resRepo.updateStatus(resId, ReservationStatus.CANCELLED);
-                    vehicleRepo.updateStatus(vehicleId, VehicleStatus.AVAILABLE);
-                    notifyRepo.create(resId, NotificationType.SYSTEM, "Reservation " + rs.getString("reservation_number") + " has been cancelled.");
+                    notifyRepo.create(resId, NotificationType.CANCELLATION_NOTIFICATION, "Reservation " + rs.getString("reservation_number") + " has been cancelled.");
+                    logRepo.addLog(vehicleId, VehicleLogType.OTHER, "Reservation " + rs.getString("reservation_number") + " cancelled.", null);
                 }
             }
         }
@@ -136,7 +154,7 @@ public class ReservationService {
 
     public void updateReservation(VehicleReservation res) {
         resRepo.update(res);
-        notifyRepo.create(res.getId(), NotificationType.SYSTEM, "Reservation " + res.getReservationNumber() + " has been updated by staff.");
+        notifyRepo.create(res.getId(), NotificationType.RESERVATION_REMINDER, "Reservation " + res.getReservationNumber() + " has been updated by staff.");
     }
 
     public void deleteReservation(int resId) throws Exception {
@@ -147,10 +165,37 @@ public class ReservationService {
             try (ResultSet rs = pstmt.executeQuery()) {
                 if (rs.next()) {
                     int vehicleId = rs.getInt("vehicle_id");
-                    vehicleRepo.updateStatus(vehicleId, VehicleStatus.AVAILABLE);
+                    logRepo.addLog(vehicleId, VehicleLogType.OTHER, "Reservation deleted by staff.", null);
                 }
             }
         }
         resRepo.delete(resId);
+    }
+
+    public void validateCustomerEligibility(int memberId) throws Exception {
+        eligibilityService.validateCustomerEligibility(memberId);
+    }
+
+    private BigDecimal insurancePrice(InsuranceType type) {
+        return switch (type) {
+            case BASIC -> new BigDecimal("8.00");
+            case PERSONAL -> new BigDecimal("15.00");
+            case BELONGINGS -> new BigDecimal("12.00");
+        };
+    }
+
+    private BigDecimal equipmentPrice(EquipmentType type) {
+        return switch (type) {
+            case NAVIGATION -> new BigDecimal("10.00");
+            case CHILD_SEAT -> new BigDecimal("7.00");
+            case WIFI -> new BigDecimal("9.00");
+        };
+    }
+
+    private BigDecimal servicePrice(ServiceType type) {
+        return switch (type) {
+            case ROADSIDE_ASSISTANCE -> new BigDecimal("20.00");
+            case ADDITIONAL_DRIVER -> new BigDecimal("25.00");
+        };
     }
 }

@@ -1,5 +1,7 @@
 package com.cs210.project.models;
 
+import java.time.LocalDate;
+
 public class Person {
     private int id;
     private String name;
@@ -10,6 +12,7 @@ public class Person {
     private String country;
     private String email;
     private String phone;
+    private LocalDate birthDate;
 
     // Constructors
     public Person() {}
@@ -39,4 +42,6 @@ public class Person {
     public void setEmail(String email) { this.email = email; }
     public String getPhone() { return phone; }
     public void setPhone(String phone) { this.phone = phone; }
+    public LocalDate getBirthDate() { return birthDate; }
+    public void setBirthDate(LocalDate birthDate) { this.birthDate = birthDate; }
 }

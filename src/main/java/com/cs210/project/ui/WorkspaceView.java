@@ -2,6 +2,7 @@ package com.cs210.project.ui;
 
 import com.cs210.project.config.Session;
 import com.cs210.project.models.Account;
+import com.cs210.project.services.SystemTaskService;
 import javafx.geometry.Insets;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
@@ -18,6 +19,7 @@ public class WorkspaceView extends BorderPane {
 
     private void setupUI() {
         Account user = Session.getAccount();
+        new SystemTaskService().runSystemTasks();
         
         VBox sidebar = new VBox(10);
         sidebar.setPadding(new Insets(20));
@@ -45,10 +47,7 @@ public class WorkspaceView extends BorderPane {
             Button paymentsBtn = createSidebarBtn("My Payments");
             paymentsBtn.setOnAction(e -> setCenter(new PaymentsHistoryView()));
 
-            Button memberPickupBtn = createSidebarBtn("Pickup / Return");
-            memberPickupBtn.setOnAction(e -> setCenter(new PickupReturnView()));
-
-            sidebar.getChildren().addAll(myResBtn, reserveBtn, notifyBtn, paymentsBtn, memberPickupBtn);
+            sidebar.getChildren().addAll(myResBtn, reserveBtn, notifyBtn, paymentsBtn);
         }
 
         if (Session.isReceptionist() || Session.isSuperAdmin() || Session.isWorker()) {

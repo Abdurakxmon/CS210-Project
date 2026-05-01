@@ -34,7 +34,7 @@ CREATE TABLE IF NOT EXISTS parking_stalls (
 CREATE TABLE IF NOT EXISTS barcodes (
     id INT PRIMARY KEY AUTO_INCREMENT,
     barcode VARCHAR(100) UNIQUE NOT NULL,
-    issued_at TIMESTAMP NOT NULL,
+    issued_at DATETIME NOT NULL,
     active BOOLEAN DEFAULT TRUE
 ) ENGINE=InnoDB;
 
@@ -57,6 +57,10 @@ CREATE TABLE IF NOT EXISTS vehicles (
     mileage INT,
     is_active BOOLEAN DEFAULT TRUE,
     price_per_day DECIMAL(10,2) DEFAULT 0.00,
+    image_path VARCHAR(500) NULL,
+    transmission_type INT DEFAULT 1,
+    fuel_type INT DEFAULT 1,
+    fuel_level INT DEFAULT 100,
     FOREIGN KEY (location_id) REFERENCES locations(id),
     FOREIGN KEY (parking_stall_id) REFERENCES parking_stalls(id),
     FOREIGN KEY (barcode_id) REFERENCES barcodes(id)
@@ -72,7 +76,8 @@ CREATE TABLE IF NOT EXISTS persons (
     zipcode VARCHAR(30),
     country VARCHAR(100),
     email VARCHAR(150),
-    phone VARCHAR(50)
+    phone VARCHAR(50),
+    birth_date DATE NULL
 ) ENGINE=InnoDB;
 
 -- 7. accounts
@@ -93,7 +98,7 @@ CREATE TABLE IF NOT EXISTS vehicle_logs (
     vehicle_id INT NOT NULL,
     log_type INT NOT NULL,
     description TEXT,
-    creation_date TIMESTAMP NOT NULL,
+    creation_date DATETIME NOT NULL,
     account_id INT NULL,
     FOREIGN KEY (vehicle_id) REFERENCES vehicles(id) ON DELETE CASCADE,
 FOREIGN KEY (account_id) REFERENCES accounts(id)
@@ -104,7 +109,7 @@ CREATE TABLE IF NOT EXISTS members (
     id INT PRIMARY KEY AUTO_INCREMENT,
     account_id INT UNIQUE NOT NULL,
     driver_license_number VARCHAR(100) UNIQUE NOT NULL,
-    driver_license_expiry TIMESTAMP NOT NULL,
+    driver_license_expiry DATETIME NOT NULL,
     FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
@@ -112,14 +117,14 @@ CREATE TABLE IF NOT EXISTS members (
 CREATE TABLE IF NOT EXISTS receptionists (
     id INT PRIMARY KEY AUTO_INCREMENT,
     account_id INT UNIQUE NOT NULL,
-    date_joined TIMESTAMP NOT NULL,
+    date_joined DATETIME NOT NULL,
     FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
 -- 11. barcode_readers
 CREATE TABLE IF NOT EXISTS barcode_readers (
     id INT PRIMARY KEY AUTO_INCREMENT,
-    registered_at TIMESTAMP NOT NULL,
+    registered_at DATETIME NOT NULL,
     active BOOLEAN DEFAULT TRUE
 ) ENGINE=InnoDB;
 
@@ -129,10 +134,11 @@ CREATE TABLE IF NOT EXISTS vehicle_reservations (
     reservation_number VARCHAR(100) UNIQUE NOT NULL,
     member_id INT NOT NULL,
     vehicle_id INT NOT NULL,
-    creation_date TIMESTAMP NOT NULL,
+    creation_date DATETIME NOT NULL,
+    pickup_date DATETIME NOT NULL,
     status INT NOT NULL,
-    due_date TIMESTAMP NOT NULL,
-    return_date TIMESTAMP NULL,
+    due_date DATETIME NOT NULL,
+    return_date DATETIME NULL,
     pickup_location_id INT NOT NULL,
     return_location_id INT NOT NULL,
     processed_by_account_id INT NULL,
@@ -141,6 +147,28 @@ CREATE TABLE IF NOT EXISTS vehicle_reservations (
     FOREIGN KEY (pickup_location_id) REFERENCES locations(id),
     FOREIGN KEY (return_location_id) REFERENCES locations(id),
     FOREIGN KEY (processed_by_account_id) REFERENCES accounts(id)
+) ENGINE=InnoDB;
+
+-- 24. return_inspections
+CREATE TABLE IF NOT EXISTS return_inspections (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    reservation_id INT NOT NULL,
+    vehicle_id INT NOT NULL,
+    worker_account_id INT NOT NULL,
+    inspection_date DATETIME NOT NULL,
+    mileage INT NOT NULL,
+    fuel_level INT NOT NULL,
+    damage_description TEXT NULL,
+    damage_fee DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+    fuel_fee DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+    cleaned BOOLEAN DEFAULT FALSE,
+    maintenance_required BOOLEAN DEFAULT FALSE,
+    parking_stall_id INT NULL,
+    notes TEXT NULL,
+    FOREIGN KEY (reservation_id) REFERENCES vehicle_reservations(id) ON DELETE CASCADE,
+    FOREIGN KEY (vehicle_id) REFERENCES vehicles(id),
+    FOREIGN KEY (worker_account_id) REFERENCES accounts(id),
+    FOREIGN KEY (parking_stall_id) REFERENCES parking_stalls(id)
 ) ENGINE=InnoDB;
 
 -- 13. additional_drivers
@@ -202,7 +230,7 @@ CREATE TABLE IF NOT EXISTS bill_items (
 CREATE TABLE IF NOT EXISTS payments (
     id INT PRIMARY KEY AUTO_INCREMENT,
     bill_id INT NOT NULL,
-    creation_date TIMESTAMP NOT NULL,
+    creation_date DATETIME NOT NULL,
     amount DECIMAL(10,2) NOT NULL,
     status INT NOT NULL,
     payment_type INT NOT NULL,
@@ -239,9 +267,10 @@ CREATE TABLE IF NOT EXISTS notifications (
     id INT PRIMARY KEY AUTO_INCREMENT,
     reservation_id INT NOT NULL,
     notification_type INT NOT NULL,
-    created_on TIMESTAMP NOT NULL,
+    created_on DATETIME NOT NULL,
     content TEXT NOT NULL,
     address VARCHAR(255) NULL,
     email VARCHAR(150) NULL,
     FOREIGN KEY (reservation_id) REFERENCES vehicle_reservations(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
+

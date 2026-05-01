@@ -56,8 +56,7 @@ public class PickupReturnView extends VBox {
         Label totalLbl = new Label("Grand Total: $" + bill.getTotalAmount());
         totalLbl.setStyle("-fx-font-size: 16px; -fx-font-weight: bold;");
 
-        BigDecimal paid = paymentRepo.findByBillId(bill.getId()).stream()
-            .map(Payment::getAmount).reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal paid = paymentRepo.getSuccessfulPaidAmount(bill.getId());
         BigDecimal remaining = bill.getTotalAmount().subtract(paid);
         
         Label summary = new Label(String.format("Already Paid: $%.2f | Balance: $%.2f", paid, remaining));

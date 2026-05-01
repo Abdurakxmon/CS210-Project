@@ -2,6 +2,8 @@ package com.cs210.project.ui;
 
 import com.cs210.project.config.Session;
 import com.cs210.project.constants.Enums.VehicleType;
+import com.cs210.project.constants.Enums.TransmissionType;
+import com.cs210.project.constants.Enums.FuelType;
 import com.cs210.project.constants.VehicleStatus;
 import com.cs210.project.models.Account;
 import com.cs210.project.models.Location;
@@ -206,6 +208,16 @@ public class VehiclesView extends VBox {
         plateCol.setCellValueFactory(new PropertyValueFactory<>("licenseNumber"));
         TableColumn<Vehicle, String> locCol = new TableColumn<>("Location");
         locCol.setCellValueFactory(new PropertyValueFactory<>("locationName"));
+        TableColumn<Vehicle, String> stallCol = new TableColumn<>("Stall");
+        stallCol.setCellValueFactory(new PropertyValueFactory<>("parkingStallNumber"));
+        TableColumn<Vehicle, String> transmissionCol = new TableColumn<>("Transmission");
+        transmissionCol.setCellValueFactory(data -> new javafx.beans.property.SimpleStringProperty(
+                data.getValue().getTransmissionType() != null ? data.getValue().getTransmissionType().getLabel() : ""));
+        TableColumn<Vehicle, String> fuelCol = new TableColumn<>("Fuel");
+        fuelCol.setCellValueFactory(data -> new javafx.beans.property.SimpleStringProperty(
+                data.getValue().getFuelType() != null ? data.getValue().getFuelType().getLabel() : ""));
+        TableColumn<Vehicle, Integer> fuelLevelCol = new TableColumn<>("Fuel %");
+        fuelLevelCol.setCellValueFactory(new PropertyValueFactory<>("fuelLevel"));
         TableColumn<Vehicle, String> statusCol = new TableColumn<>("Status");
         statusCol.setCellValueFactory(new PropertyValueFactory<>("status"));
         TableColumn<Vehicle, Boolean> activeCol = new TableColumn<>("Active");
@@ -214,7 +226,7 @@ public class VehiclesView extends VBox {
         TableColumn<Vehicle, Double> priceCol = new TableColumn<>("Price/Day");
         priceCol.setCellValueFactory(new PropertyValueFactory<>("pricePerDay"));
 
-        table.getColumns().addAll(makeCol, modelCol, plateCol, locCol, priceCol, statusCol, activeCol);
+        table.getColumns().addAll(makeCol, modelCol, plateCol, locCol, stallCol, transmissionCol, fuelCol, fuelLevelCol, priceCol, statusCol, activeCol);
         table.setPlaceholder(new Label("No vehicles found."));
 
         getChildren().addAll(title, filterGrid, actions, table);
@@ -238,6 +250,8 @@ public class VehiclesView extends VBox {
         TextField mileageField = new TextField(vehicle != null ? String.valueOf(vehicle.getMileage()) : "0");
         TextField capacityField = new TextField(vehicle != null ? String.valueOf(vehicle.getPassengerCapacity()) : "5");
         TextField stockField = new TextField(vehicle != null ? vehicle.getStockNumber() : "");
+        TextField imagePathField = new TextField(vehicle != null ? vehicle.getImagePath() : "");
+        TextField fuelLevelField = new TextField(vehicle != null ? String.valueOf(vehicle.getFuelLevel()) : "100");
         CheckBox sunroofCheck = new CheckBox("Has Sunroof");
         if (vehicle != null)
             sunroofCheck.setSelected(vehicle.isHasSunroof());
@@ -247,10 +261,20 @@ public class VehiclesView extends VBox {
         ComboBox<VehicleType> typeBox = new ComboBox<>(FXCollections.observableArrayList(VehicleType.values()));
         if (vehicle != null)
             typeBox.setValue(vehicle.getVehicleType());
+        else
+            typeBox.setValue(VehicleType.CAR);
 
         ComboBox<CarType> carTypeBox = new ComboBox<>(FXCollections.observableArrayList(CarType.values()));
         if (vehicle != null)
             carTypeBox.setValue(vehicle.getCarType());
+        else
+            carTypeBox.setValue(CarType.ECONOMY);
+
+        ComboBox<TransmissionType> transmissionBox = new ComboBox<>(FXCollections.observableArrayList(TransmissionType.values()));
+        transmissionBox.setValue(vehicle != null && vehicle.getTransmissionType() != null ? vehicle.getTransmissionType() : TransmissionType.AUTOMATIC);
+
+        ComboBox<FuelType> fuelTypeBox = new ComboBox<>(FXCollections.observableArrayList(FuelType.values()));
+        fuelTypeBox.setValue(vehicle != null && vehicle.getFuelType() != null ? vehicle.getFuelType() : FuelType.PETROL);
 
         ComboBox<Location> locBox = new ComboBox<>(FXCollections.observableArrayList(locationRepo.findAll()));
         ComboBox<ParkingStall> stallBox = new ComboBox<>();
@@ -306,6 +330,14 @@ public class VehiclesView extends VBox {
         grid.add(new Label("Price/Day:"), 0, 6);
         grid.add(priceField, 1, 6);
         grid.add(sunroofCheck, 2, 6);
+        grid.add(new Label("Image Path:"), 0, 7);
+        grid.add(imagePathField, 1, 7);
+        grid.add(new Label("Transmission:"), 2, 7);
+        grid.add(transmissionBox, 3, 7);
+        grid.add(new Label("Fuel Type:"), 0, 8);
+        grid.add(fuelTypeBox, 1, 8);
+        grid.add(new Label("Fuel Level:"), 2, 8);
+        grid.add(fuelLevelField, 3, 8);
 
         Button saveBtn = new Button("Save Vehicle");
         saveBtn.setStyle("-fx-background-color: #2ecc71; -fx-text-fill: white; -fx-font-weight: bold;");
@@ -325,6 +357,10 @@ public class VehiclesView extends VBox {
                 v.setHasSunroof(sunroofCheck.isSelected());
                 v.setVehicleType(typeBox.getValue());
                 v.setCarType(carTypeBox.getValue());
+                v.setImagePath(imagePathField.getText());
+                v.setTransmissionType(transmissionBox.getValue());
+                v.setFuelType(fuelTypeBox.getValue());
+                v.setFuelLevel(Integer.parseInt(fuelLevelField.getText()));
                 if (locBox.getValue() != null)
                     v.setLocationId(locBox.getValue().getId());
                 if (stallBox.getValue() != null)
@@ -474,6 +510,10 @@ public class VehiclesView extends VBox {
         addDetailRow(info, "Capacity:", v.getPassengerCapacity() + " Passengers", row++);
         addDetailRow(info, "Type:", v.getVehicleType().getLabel(), row++);
         addDetailRow(info, "Class:", v.getCarType() != null ? v.getCarType().getLabel() : "N/A", row++);
+        addDetailRow(info, "Transmission:", v.getTransmissionType() != null ? v.getTransmissionType().getLabel() : "N/A", row++);
+        addDetailRow(info, "Fuel Type:", v.getFuelType() != null ? v.getFuelType().getLabel() : "N/A", row++);
+        addDetailRow(info, "Fuel Level:", v.getFuelLevel() + "%", row++);
+        addDetailRow(info, "Image:", v.getImagePath() != null && !v.getImagePath().isBlank() ? v.getImagePath() : "Placeholder", row++);
         addDetailRow(info, "Location:", v.getLocationName(), row++);
 
         String stallName = "Not Assigned";
