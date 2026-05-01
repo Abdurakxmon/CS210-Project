@@ -51,7 +51,7 @@ public class ReservationRepository {
         String sql = "SELECT r.*, v.make, v.model, v.license_number, pm.name as member_name, ps.name as staff_name FROM vehicle_reservations r " +
                      "JOIN vehicles v ON r.vehicle_id = v.id " +
                      "JOIN members m ON r.member_id = m.id " +
-                     "JOIN accounts am ON m.id = am.id " +
+                     "JOIN accounts am ON m.account_id = am.id " +
                      "JOIN persons pm ON am.person_id = pm.id " +
                      "LEFT JOIN accounts as_ ON r.processed_by_account_id = as_.id " +
                      "LEFT JOIN persons ps ON as_.person_id = ps.id " +
