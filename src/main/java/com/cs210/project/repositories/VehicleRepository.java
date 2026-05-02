@@ -221,13 +221,14 @@ public class VehicleRepository {
         } catch (SQLException e) { e.printStackTrace(); }
     }
 
-    public void delete(int id) {
+    public boolean delete(int id) {
         String sql = "UPDATE vehicles SET is_active = FALSE WHERE id = ?";
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setInt(1, id);
-            pstmt.executeUpdate();
+            return pstmt.executeUpdate() > 0;
         } catch (SQLException e) { e.printStackTrace(); }
+        return false;
     }
 
     private Vehicle mapResultSetToVehicle(ResultSet rs) throws SQLException {

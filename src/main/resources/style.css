@@ -770,6 +770,10 @@
     -fx-background-color: linear-gradient(to bottom right, #f4f7f1 0%, #eef5ed 45%, #ffffff 100%);
 }
 
+.backend-reservations-root {
+    -fx-background-color: linear-gradient(to bottom right, #f4f7f1 0%, #eef5ed 45%, #ffffff 100%);
+}
+
 .backend-inventory-hero {
     -fx-background-color: linear-gradient(to bottom right, #0c1f1a, #123d2d 58%, #1f7a4c);
     -fx-background-radius: 24;

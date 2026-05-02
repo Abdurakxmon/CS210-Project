@@ -496,8 +496,7 @@ public class VehiclesView extends VBox {
             deleteBtn.setOnAction(e -> {
                 Vehicle selected = table.getSelectionModel().getSelectedItem();
                 if (selected != null) {
-                    vehicleRepo.delete(selected.getId());
-                    loadData();
+                    confirmDeleteVehicle(selected);
                 }
             });
 
@@ -752,6 +751,32 @@ public class VehiclesView extends VBox {
         root.setAlignment(javafx.geometry.Pos.CENTER);
         dialog.setScene(new Scene(root));
         dialog.show();
+    }
+
+    private void confirmDeleteVehicle(Vehicle vehicle) {
+        if (!vehicle.isActive()) {
+            new Alert(Alert.AlertType.INFORMATION, vehicle.getMake() + " " + vehicle.getModel() + " is already inactive.").show();
+            return;
+        }
+
+        Alert confirm = new Alert(
+                Alert.AlertType.CONFIRMATION,
+                "Deactivate " + vehicle.getMake() + " " + vehicle.getModel() + " (" + vehicle.getLicenseNumber() + ")?",
+                ButtonType.YES,
+                ButtonType.NO);
+        confirm.setTitle("Delete Vehicle");
+        confirm.setHeaderText("Confirm vehicle deactivation");
+        confirm.showAndWait().ifPresent(response -> {
+            if (response == ButtonType.YES) {
+                boolean deleted = vehicleRepo.delete(vehicle.getId());
+                loadData();
+                if (deleted) {
+                    new Alert(Alert.AlertType.INFORMATION, "Vehicle deactivated successfully. Use Reactivate to restore it.").show();
+                } else {
+                    new Alert(Alert.AlertType.ERROR, "Vehicle could not be deactivated. Please refresh and try again.").show();
+                }
+            }
+        });
     }
 
     private void showHistoryDialog(Vehicle vehicle) {

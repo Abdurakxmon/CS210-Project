@@ -29,6 +29,7 @@ import javafx.stage.Stage;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Locale;
 import java.math.BigDecimal;
 
 public class ReservationsListView extends VBox {
@@ -46,6 +47,12 @@ public class ReservationsListView extends VBox {
     private final String feedbackMessage;
     private final VBox memberCards = new VBox(14);
     private final Label memberSummaryLabel = new Label();
+    private final Label backendSummaryLabel = new Label();
+    private List<VehicleReservation> backendReservations = List.of();
+    private TextField backendSearchField;
+    private ComboBox<ReservationStatus> backendStatusFilter;
+    private DatePicker backendPickupFromPicker;
+    private DatePicker backendPickupToPicker;
     private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern("MMM d, yyyy HH:mm");
 
     public ReservationsListView() {
@@ -65,11 +72,20 @@ public class ReservationsListView extends VBox {
             return;
         }
 
-        setPadding(new Insets(20));
-        setSpacing(15);
+        getStyleClass().add("backend-reservations-root");
+        setPadding(new Insets(22));
+        setSpacing(18);
 
+        VBox hero = new VBox(10);
+        hero.getStyleClass().add("backend-inventory-hero");
+        Label eyebrow = new Label("OPERATIONS");
+        eyebrow.getStyleClass().add("backend-inventory-eyebrow");
         Label title = new Label("All Reservations");
-        title.setStyle("-fx-font-size: 20px; -fx-font-weight: bold;");
+        title.getStyleClass().add("backend-inventory-title");
+        Label subtitle = new Label("Search reservations, monitor pickup status, and handle cancellation or return workflows.");
+        subtitle.getStyleClass().add("backend-inventory-subtitle");
+        backendSummaryLabel.getStyleClass().add("backend-inventory-summary");
+        hero.getChildren().addAll(eyebrow, title, subtitle, backendSummaryLabel);
 
         Label feedbackLabel = new Label(feedbackMessage == null ? "" : feedbackMessage);
         feedbackLabel.setWrapText(true);
@@ -77,9 +93,14 @@ public class ReservationsListView extends VBox {
         feedbackLabel.setManaged(feedbackLabel.isVisible());
         feedbackLabel.setStyle("-fx-background-color: #e8f7ee; -fx-text-fill: #17633a; -fx-padding: 10 12; -fx-background-radius: 8; -fx-font-weight: bold;");
 
+        GridPane filterGrid = createBackendFilterGrid();
+
         // Columns
         TableColumn<VehicleReservation, String> resNumCol = new TableColumn<>("Res #");
         resNumCol.setCellValueFactory(new PropertyValueFactory<>("reservationNumber"));
+
+        TableColumn<VehicleReservation, String> memberCol = new TableColumn<>("Member");
+        memberCol.setCellValueFactory(new PropertyValueFactory<>("memberName"));
 
         TableColumn<VehicleReservation, String> vehicleCol = new TableColumn<>("Vehicle");
         vehicleCol.setCellValueFactory(data -> new javafx.beans.property.SimpleStringProperty(
@@ -97,10 +118,16 @@ public class ReservationsListView extends VBox {
         TableColumn<VehicleReservation, Double> paidCol = new TableColumn<>("Paid");
         paidCol.setCellValueFactory(new PropertyValueFactory<>("paidAmount"));
 
-        table.getColumns().addAll(resNumCol, vehicleCol, statusCol, pickupCol, dueCol, amountCol, paidCol);
+        table.getColumns().addAll(resNumCol, memberCol, vehicleCol, statusCol, pickupCol, dueCol, amountCol, paidCol);
+        table.getStyleClass().add("backend-table");
+        table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
+        VBox.setVgrow(table, Priority.ALWAYS);
 
         HBox actions = new HBox(10);
+        actions.getStyleClass().add("backend-action-bar");
+        actions.setAlignment(Pos.CENTER_LEFT);
         Button refreshBtn = new Button("Refresh");
+        refreshBtn.getStyleClass().add("backend-secondary-btn");
         refreshBtn.setOnAction(e -> loadData());
 
         actions.getChildren().add(refreshBtn);
@@ -116,22 +143,23 @@ public class ReservationsListView extends VBox {
                 new Alert(Alert.AlertType.INFORMATION, "Reservation number " + selected.getReservationNumber() + " copied to clipboard!").show();
             }
         });
+        copyBtn.getStyleClass().add("backend-secondary-btn");
         actions.getChildren().add(copyBtn);
 
         if (!Session.isMember()) {
             Button addBtn = new Button("Add Reservation");
-            addBtn.setStyle("-fx-background-color: #2ecc71; -fx-text-fill: white;");
+            addBtn.getStyleClass().add("backend-primary-btn");
             addBtn.setOnAction(e -> showReservationDialog(null));
 
             Button editBtn = new Button("Edit Selected");
-            editBtn.setStyle("-fx-background-color: #3498db; -fx-text-fill: white;");
+            editBtn.getStyleClass().add("backend-secondary-btn");
             editBtn.setOnAction(e -> {
                 VehicleReservation selected = table.getSelectionModel().getSelectedItem();
                 if (selected != null) showReservationDialog(selected);
             });
 
             Button deleteBtn = new Button("Delete Selected");
-            deleteBtn.setStyle("-fx-background-color: #e74c3c; -fx-text-fill: white;");
+            deleteBtn.getStyleClass().add("backend-danger-btn");
             deleteBtn.setOnAction(e -> {
                 VehicleReservation selected = table.getSelectionModel().getSelectedItem();
                 if (selected != null) {
@@ -153,6 +181,7 @@ public class ReservationsListView extends VBox {
         }
 
         Button cancelBtn = new Button("Cancel Selected");
+        cancelBtn.getStyleClass().add("backend-danger-btn");
         cancelBtn.setOnAction(e -> {
             VehicleReservation selected = table.getSelectionModel().getSelectedItem();
             if (selected != null) {
@@ -167,6 +196,7 @@ public class ReservationsListView extends VBox {
         });
 
         Button returnBtn = new Button("Return Selected");
+        returnBtn.getStyleClass().add("backend-primary-btn");
         returnBtn.setOnAction(e -> {
             VehicleReservation selected = table.getSelectionModel().getSelectedItem();
             if (selected == null) return;
@@ -197,14 +227,74 @@ public class ReservationsListView extends VBox {
         });
 
         Button detailsBtn = new Button("View Details");
-        detailsBtn.setStyle("-fx-background-color: #f39c12; -fx-text-fill: white;");
+        detailsBtn.getStyleClass().add("backend-secondary-btn");
         detailsBtn.setOnAction(e -> {
             VehicleReservation selected = table.getSelectionModel().getSelectedItem();
             if (selected != null) showDetailsDialog(selected);
         });
 
         actions.getChildren().addAll(cancelBtn, returnBtn, detailsBtn);
-        getChildren().addAll(title, feedbackLabel, actions, table);
+        getChildren().addAll(hero, feedbackLabel, filterGrid, actions, table);
+    }
+
+    private GridPane createBackendFilterGrid() {
+        GridPane filterGrid = new GridPane();
+        filterGrid.getStyleClass().add("backend-filter-panel");
+        filterGrid.setHgap(10);
+        filterGrid.setVgap(10);
+        filterGrid.setPadding(new Insets(16));
+
+        Label searchLabel = new Label("Search");
+        searchLabel.getStyleClass().add("backend-filter-label");
+        Label statusLabel = new Label("Status");
+        statusLabel.getStyleClass().add("backend-filter-label");
+        Label fromLabel = new Label("Pickup from");
+        fromLabel.getStyleClass().add("backend-filter-label");
+        Label toLabel = new Label("Pickup to");
+        toLabel.getStyleClass().add("backend-filter-label");
+
+        backendSearchField = new TextField();
+        backendSearchField.setPromptText("Reservation, member, vehicle, plate...");
+        backendSearchField.getStyleClass().add("backend-text-input");
+        backendSearchField.setPrefWidth(280);
+        backendSearchField.textProperty().addListener((obs, oldValue, newValue) -> applyBackendReservationFilters());
+
+        backendStatusFilter = new ComboBox<>(FXCollections.observableArrayList(ReservationStatus.values()));
+        backendStatusFilter.setPromptText("Any status");
+        backendStatusFilter.getStyleClass().add("backend-input");
+        backendStatusFilter.setPrefWidth(160);
+        backendStatusFilter.setOnAction(e -> applyBackendReservationFilters());
+
+        backendPickupFromPicker = new DatePicker();
+        backendPickupFromPicker.getStyleClass().add("backend-input");
+        backendPickupFromPicker.setEditable(false);
+        backendPickupFromPicker.setOnAction(e -> applyBackendReservationFilters());
+
+        backendPickupToPicker = new DatePicker();
+        backendPickupToPicker.getStyleClass().add("backend-input");
+        backendPickupToPicker.setEditable(false);
+        backendPickupToPicker.setOnAction(e -> applyBackendReservationFilters());
+
+        Button clearBtn = new Button("Clear");
+        clearBtn.getStyleClass().add("backend-secondary-btn");
+        clearBtn.setOnAction(e -> {
+            backendSearchField.clear();
+            backendStatusFilter.setValue(null);
+            backendPickupFromPicker.setValue(null);
+            backendPickupToPicker.setValue(null);
+            applyBackendReservationFilters();
+        });
+
+        filterGrid.add(searchLabel, 0, 0);
+        filterGrid.add(backendSearchField, 1, 0, 2, 1);
+        filterGrid.add(statusLabel, 3, 0);
+        filterGrid.add(backendStatusFilter, 4, 0);
+        filterGrid.add(fromLabel, 0, 1);
+        filterGrid.add(backendPickupFromPicker, 1, 1);
+        filterGrid.add(toLabel, 2, 1);
+        filterGrid.add(backendPickupToPicker, 3, 1);
+        filterGrid.add(clearBtn, 4, 1);
+        return filterGrid;
     }
 
     private void setupMemberReservationsUI() {
@@ -483,9 +573,63 @@ public class ReservationsListView extends VBox {
                     .filter(res -> res.getStatus() == ReservationStatus.WAITING_FOR_INSPECTION)
                     .toList();
             }
-            table.setItems(FXCollections.observableArrayList(data));
+            backendReservations = data;
+            applyBackendReservationFilters();
         }
         selectHighlightedReservation();
+    }
+
+    private void applyBackendReservationFilters() {
+        if (Session.isMember() || backendReservations == null) {
+            return;
+        }
+
+        String query = backendSearchField == null || backendSearchField.getText() == null
+                ? ""
+                : backendSearchField.getText().trim().toLowerCase(Locale.ROOT);
+        ReservationStatus status = backendStatusFilter == null ? null : backendStatusFilter.getValue();
+        java.time.LocalDate pickupFrom = backendPickupFromPicker == null ? null : backendPickupFromPicker.getValue();
+        java.time.LocalDate pickupTo = backendPickupToPicker == null ? null : backendPickupToPicker.getValue();
+
+        List<VehicleReservation> filtered = backendReservations.stream()
+                .filter(reservation -> matchesBackendSearch(reservation, query))
+                .filter(reservation -> status == null || reservation.getStatus() == status)
+                .filter(reservation -> pickupFrom == null || (reservation.getPickupDate() != null && !reservation.getPickupDate().toLocalDate().isBefore(pickupFrom)))
+                .filter(reservation -> pickupTo == null || (reservation.getPickupDate() != null && !reservation.getPickupDate().toLocalDate().isAfter(pickupTo)))
+                .toList();
+
+        table.setItems(FXCollections.observableArrayList(filtered));
+        updateBackendSummary(filtered);
+    }
+
+    private boolean matchesBackendSearch(VehicleReservation reservation, String query) {
+        if (query == null || query.isBlank()) {
+            return true;
+        }
+        String haystack = String.join(" ",
+                value(reservation.getReservationNumber()),
+                value(reservation.getMemberName()),
+                value(reservation.getVehicleMake()),
+                value(reservation.getVehicleModel()),
+                value(reservation.getVehiclePlate()),
+                value(reservation.getPickupLocationName()),
+                value(reservation.getReturnLocationName())).toLowerCase(Locale.ROOT);
+        return haystack.contains(query);
+    }
+
+    private void updateBackendSummary(List<VehicleReservation> reservations) {
+        if (backendSummaryLabel == null || reservations == null) {
+            return;
+        }
+        long confirmed = reservations.stream().filter(reservation -> reservation.getStatus() == ReservationStatus.CONFIRMED).count();
+        long active = reservations.stream().filter(reservation -> reservation.getStatus() == ReservationStatus.PENDING).count();
+        long waitingInspection = reservations.stream().filter(reservation -> reservation.getStatus() == ReservationStatus.WAITING_FOR_INSPECTION).count();
+        backendSummaryLabel.setText(reservations.size() + " reservations · " + confirmed + " confirmed · "
+                + active + " active · " + waitingInspection + " waiting inspection");
+    }
+
+    private String value(String text) {
+        return text == null ? "" : text;
     }
 
     private void populateMemberCards(List<VehicleReservation> reservations) {
