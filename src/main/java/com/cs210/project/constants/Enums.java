@@ -115,7 +115,7 @@ public class Enums {
     }
     
     public enum InsuranceType {
-        BASIC(1, "Basic"), PERSONAL(2, "Personal"), BELONGINGS(3, "Belongings");
+        BASIC(1, "Additional insurance (deductible)"), PERSONAL(2, "Personal"), BELONGINGS(3, "Belongings");
         private final int value;
         private final String label;
         InsuranceType(int v, String l) { this.value = v; this.label = l; }
@@ -128,7 +128,7 @@ public class Enums {
     }
 
     public enum EquipmentType {
-        NAVIGATION(1, "Navigation"), CHILD_SEAT(2, "Child Seat"), WIFI(3, "WiFi");
+        NAVIGATION(1, "Navigation"), CHILD_SEAT(2, "Child Seat"), WIFI(3, "Wi-Fi Hotspot"), CAR_FRIDGE(4, "Car fridge");
         private final int value;
         private final String label;
         EquipmentType(int v, String l) { this.value = v; this.label = l; }

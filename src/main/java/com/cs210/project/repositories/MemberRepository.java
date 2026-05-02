@@ -8,11 +8,15 @@ import com.cs210.project.models.Member;
 import com.cs210.project.models.Person;
 import org.mindrot.jbcrypt.BCrypt;
 
+import java.time.LocalDate;
+import java.time.Period;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
 public class MemberRepository {
+    private static final int MINIMUM_AGE = 18;
+    private static final String PASSWORD_RULE = "^(?=.*[A-Z])(?=.*\\d).{8,}$";
 
     public Account login(String username, String password) {
         String sql = "SELECT a.*, p.name, p.email, p.phone FROM accounts a " +
@@ -119,6 +123,16 @@ public class MemberRepository {
     public boolean register(Person p, String username, String password, String license, java.time.LocalDateTime expiry) {
         Connection conn = null;
         try {
+            if (password == null || !password.matches(PASSWORD_RULE)) {
+                throw new SQLException("Password must be at least 8 characters, include 1 uppercase letter and 1 number.");
+            }
+            if (p == null || p.getBirthDate() == null || Period.between(p.getBirthDate(), LocalDate.now()).getYears() < MINIMUM_AGE) {
+                throw new SQLException("Customer must be at least " + MINIMUM_AGE + " years old.");
+            }
+            if (expiry == null || !expiry.toLocalDate().isAfter(LocalDate.now())) {
+                throw new SQLException("Driver license expiry must be a future date.");
+            }
+
             conn = DatabaseConnection.getConnection();
             conn.setAutoCommit(false);
 
@@ -136,8 +150,11 @@ public class MemberRepository {
                 }
             }
 
-            // 1. Insert Person
-            String sqlPerson = "INSERT INTO persons (name, email, phone, street_address, city, state, zipcode, country, birth_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+            // 1. Insert Person (support old schemas that do not yet have birth_date)
+            boolean hasBirthDate = hasColumn(conn, "persons", "birth_date");
+            String sqlPerson = hasBirthDate
+                    ? "INSERT INTO persons (name, email, phone, street_address, city, state, zipcode, country, birth_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
+                    : "INSERT INTO persons (name, email, phone, street_address, city, state, zipcode, country) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
             PreparedStatement pstmtPerson = conn.prepareStatement(sqlPerson, Statement.RETURN_GENERATED_KEYS);
             pstmtPerson.setString(1, p.getName());
             pstmtPerson.setString(2, p.getEmail());
@@ -147,7 +164,9 @@ public class MemberRepository {
             pstmtPerson.setString(6, p.getState());
             pstmtPerson.setString(7, p.getZipcode());
             pstmtPerson.setString(8, p.getCountry());
-            if (p.getBirthDate() != null) pstmtPerson.setDate(9, Date.valueOf(p.getBirthDate())); else pstmtPerson.setNull(9, Types.DATE);
+            if (hasBirthDate) {
+                if (p.getBirthDate() != null) pstmtPerson.setDate(9, Date.valueOf(p.getBirthDate())); else pstmtPerson.setNull(9, Types.DATE);
+            }
             pstmtPerson.executeUpdate();
             
             int personId;
@@ -190,6 +209,14 @@ public class MemberRepository {
             return false;
         } finally {
             if (conn != null) try { conn.close(); } catch (SQLException e) { e.printStackTrace(); }
+        }
+    }
+
+    private boolean hasColumn(Connection conn, String tableName, String columnName) throws SQLException {
+        DatabaseMetaData meta = conn.getMetaData();
+        String catalog = conn.getCatalog();
+        try (ResultSet rs = meta.getColumns(catalog, null, tableName, columnName)) {
+            return rs.next();
         }
     }
 

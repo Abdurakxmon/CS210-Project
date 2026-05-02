@@ -19,8 +19,8 @@ public class MainApp extends Application {
     @Override
     public void start(Stage stage) {
         primaryStage = stage;
-        primaryStage.setMinWidth(980);
-        primaryStage.setMinHeight(700);
+        primaryStage.setMinWidth(760);
+        primaryStage.setMinHeight(620);
         showAuthScene();
     }
 
@@ -33,29 +33,41 @@ public class MainApp extends Application {
     }
 
     private void showAuthScene() {
-        Scene scene = new Scene(new AuthView(this::showDashboardScene, this::showRegistrationScene), 900, 680);
+        Scene scene = new Scene(new AuthView(this::showDashboardScene, this::showRegistrationScene), 1040, 720);
         applyStyle(scene);
-        primaryStage.setTitle("CS210 Project | Authentication");
-        primaryStage.setScene(scene);
-        primaryStage.centerOnScreen();
-        primaryStage.show();
+        switchScenePreservingWindow(scene, "CS210 Project | Authentication");
     }
 
     private void showRegistrationScene() {
-        Scene scene = new Scene(new RegistrationView(this::showAuthScene), 900, 680);
+        Scene scene = new Scene(new RegistrationView(this::showAuthScene), 1100, 760);
         applyStyle(scene);
-        primaryStage.setTitle("CS210 Project | Member Registration");
-        primaryStage.setScene(scene);
-        primaryStage.centerOnScreen();
-        primaryStage.show();
+        switchScenePreservingWindow(scene, "CS210 Project | Member Registration");
     }
 
     private void showDashboardScene(Account account) {
         Scene scene = new Scene(new WorkspaceView(this::showAuthScene), 980, 700);
         applyStyle(scene);
-        primaryStage.setTitle("CS210 Project | Dashboard");
+        switchScenePreservingWindow(scene, "CS210 Project | Dashboard");
+    }
+
+    private void switchScenePreservingWindow(Scene scene, String title) {
+        boolean hadScene = primaryStage.getScene() != null;
+        double currentWidth = primaryStage.getWidth();
+        double currentHeight = primaryStage.getHeight();
+
+        primaryStage.setTitle(title);
         primaryStage.setScene(scene);
-        primaryStage.centerOnScreen();
-        primaryStage.show();
+
+        if (hadScene) {
+            primaryStage.setWidth(Math.max(currentWidth, primaryStage.getMinWidth()));
+            primaryStage.setHeight(Math.max(currentHeight, primaryStage.getMinHeight()));
+        } else {
+            primaryStage.sizeToScene();
+            primaryStage.centerOnScreen();
+        }
+
+        if (!primaryStage.isShowing()) {
+            primaryStage.show();
+        }
     }
 }

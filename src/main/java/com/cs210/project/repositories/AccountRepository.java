@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class AccountRepository {
+    private static final String PASSWORD_RULE = "^(?=.*[A-Z])(?=.*\\d).{8,}$";
 
     public List<Account> findAll() {
         List<Account> accounts = new ArrayList<>();
@@ -60,10 +61,16 @@ public class AccountRepository {
     public boolean create(Person p, String username, String password, RoleType role, AccountStatus status) {
         Connection conn = null;
         try {
+            if (password == null || !password.matches(PASSWORD_RULE)) {
+                throw new SQLException("Password must be at least 8 characters, include 1 uppercase letter and 1 number.");
+            }
             conn = DatabaseConnection.getConnection();
             conn.setAutoCommit(false);
 
-            String sqlPerson = "INSERT INTO persons (name, email, phone, street_address, city, state, zipcode, country, birth_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+            boolean hasBirthDate = hasColumn(conn, "persons", "birth_date");
+            String sqlPerson = hasBirthDate
+                    ? "INSERT INTO persons (name, email, phone, street_address, city, state, zipcode, country, birth_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
+                    : "INSERT INTO persons (name, email, phone, street_address, city, state, zipcode, country) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
             PreparedStatement pstmtPerson = conn.prepareStatement(sqlPerson, Statement.RETURN_GENERATED_KEYS);
             pstmtPerson.setString(1, p.getName());
             pstmtPerson.setString(2, p.getEmail());
@@ -73,7 +80,9 @@ public class AccountRepository {
             pstmtPerson.setString(6, p.getState());
             pstmtPerson.setString(7, p.getZipcode());
             pstmtPerson.setString(8, p.getCountry());
-            if (p.getBirthDate() != null) pstmtPerson.setDate(9, Date.valueOf(p.getBirthDate())); else pstmtPerson.setNull(9, Types.DATE);
+            if (hasBirthDate) {
+                if (p.getBirthDate() != null) pstmtPerson.setDate(9, Date.valueOf(p.getBirthDate())); else pstmtPerson.setNull(9, Types.DATE);
+            }
             pstmtPerson.executeUpdate();
             
             int personId;
@@ -103,9 +112,12 @@ public class AccountRepository {
 
     public void update(Account a) {
         String sqlAccount = "UPDATE accounts SET username = ?, status = ?, role_type = ? WHERE id = ?";
-        String sqlPerson = "UPDATE persons SET name = ?, email = ?, phone = ?, street_address = ?, city = ?, state = ?, zipcode = ?, country = ?, birth_date = ? WHERE id = ?";
         try (Connection conn = DatabaseConnection.getConnection()) {
             conn.setAutoCommit(false);
+            boolean hasBirthDate = hasColumn(conn, "persons", "birth_date");
+            String sqlPerson = hasBirthDate
+                    ? "UPDATE persons SET name = ?, email = ?, phone = ?, street_address = ?, city = ?, state = ?, zipcode = ?, country = ?, birth_date = ? WHERE id = ?"
+                    : "UPDATE persons SET name = ?, email = ?, phone = ?, street_address = ?, city = ?, state = ?, zipcode = ?, country = ? WHERE id = ?";
             try (PreparedStatement pstmtAccount = conn.prepareStatement(sqlAccount);
                  PreparedStatement pstmtPerson = conn.prepareStatement(sqlPerson)) {
                 
@@ -123,8 +135,12 @@ public class AccountRepository {
                 pstmtPerson.setString(6, a.getPerson().getState());
                 pstmtPerson.setString(7, a.getPerson().getZipcode());
                 pstmtPerson.setString(8, a.getPerson().getCountry());
-                if (a.getPerson().getBirthDate() != null) pstmtPerson.setDate(9, Date.valueOf(a.getPerson().getBirthDate())); else pstmtPerson.setNull(9, Types.DATE);
-                pstmtPerson.setInt(10, a.getPersonId());
+                if (hasBirthDate) {
+                    if (a.getPerson().getBirthDate() != null) pstmtPerson.setDate(9, Date.valueOf(a.getPerson().getBirthDate())); else pstmtPerson.setNull(9, Types.DATE);
+                    pstmtPerson.setInt(10, a.getPersonId());
+                } else {
+                    pstmtPerson.setInt(9, a.getPersonId());
+                }
                 pstmtPerson.executeUpdate();
 
                 conn.commit();
@@ -170,9 +186,21 @@ public class AccountRepository {
         person.setState(rs.getString("state"));
         person.setZipcode(rs.getString("zipcode"));
         person.setCountry(rs.getString("country"));
-        Date birthDate = rs.getDate("birth_date");
-        if (birthDate != null) person.setBirthDate(birthDate.toLocalDate());
+        try {
+            Date birthDate = rs.getDate("birth_date");
+            if (birthDate != null) person.setBirthDate(birthDate.toLocalDate());
+        } catch (SQLException ignored) {
+            // Old schema may not have birth_date.
+        }
         account.setPerson(person);
         return account;
+    }
+
+    private boolean hasColumn(Connection conn, String tableName, String columnName) throws SQLException {
+        DatabaseMetaData meta = conn.getMetaData();
+        String catalog = conn.getCatalog();
+        try (ResultSet rs = meta.getColumns(catalog, null, tableName, columnName)) {
+            return rs.next();
+        }
     }
 }

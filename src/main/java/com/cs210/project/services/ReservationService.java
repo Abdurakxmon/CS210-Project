@@ -178,7 +178,7 @@ public class ReservationService {
 
     private BigDecimal insurancePrice(InsuranceType type) {
         return switch (type) {
-            case BASIC -> new BigDecimal("8.00");
+            case BASIC -> new BigDecimal("15.00");
             case PERSONAL -> new BigDecimal("15.00");
             case BELONGINGS -> new BigDecimal("12.00");
         };
@@ -189,6 +189,7 @@ public class ReservationService {
             case NAVIGATION -> new BigDecimal("10.00");
             case CHILD_SEAT -> new BigDecimal("7.00");
             case WIFI -> new BigDecimal("9.00");
+            case CAR_FRIDGE -> new BigDecimal("12.00");
         };
     }
 

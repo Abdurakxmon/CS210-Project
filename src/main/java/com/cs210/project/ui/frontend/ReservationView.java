@@ -1,25 +1,49 @@
 package com.cs210.project.ui.frontend;
 
+import com.cs210.project.constants.Enums.EquipmentType;
+import com.cs210.project.constants.Enums.InsuranceType;
+import com.cs210.project.constants.Enums.ServiceType;
+import com.cs210.project.constants.VehicleStatus;
 import com.cs210.project.models.Account;
+import com.cs210.project.models.Bill;
 import com.cs210.project.models.Location;
 import com.cs210.project.models.Member;
 import com.cs210.project.models.Vehicle;
+import com.cs210.project.repositories.BillRepository;
 import com.cs210.project.repositories.LocationRepository;
 import com.cs210.project.repositories.MemberRepository;
-import com.cs210.project.repositories.BillRepository;
 import com.cs210.project.repositories.ReservationRepository;
 import com.cs210.project.repositories.VehicleRepository;
 import com.cs210.project.services.ReservationService;
+import javafx.collections.FXCollections;
 import javafx.geometry.Insets;
-import javafx.scene.control.*;
+import javafx.geometry.Pos;
+import javafx.scene.Node;
+import javafx.scene.control.Button;
+import javafx.scene.control.CheckBox;
+import javafx.scene.control.ComboBox;
+import javafx.scene.control.DateCell;
+import javafx.scene.control.DatePicker;
+import javafx.scene.control.Label;
+import javafx.scene.control.ScrollPane;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
+import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
+import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
+import javafx.util.StringConverter;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
-import com.cs210.project.constants.Enums.*;
+import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 public class ReservationView extends VBox {
     private final ReservationService resService = new ReservationService();
@@ -27,287 +51,467 @@ public class ReservationView extends VBox {
     private final LocationRepository locationRepo = new LocationRepository();
     private final MemberRepository memberRepo = new MemberRepository();
     private final Account currentUser;
-    private Vehicle preSelectedVehicle;
+    private final Vehicle preSelectedVehicle;
+    private final Consumer<Node> onViewChange;
+
+    private ComboBox<Vehicle> vehicleCombo;
+    private ComboBox<Location> pickupLocCombo;
+    private ComboBox<Location> returnLocCombo;
+    private DatePicker pickupDatePicker;
+    private DatePicker returnDatePicker;
+    private Label statusLabel;
+    private Label estimateLabel;
+    private Label daysLabel;
+    private Label selectedVehicleLabel;
+    private VBox receiptLinesBox;
+    private StackPane vehicleVisual;
+    private final List<CheckBox> addonChecks = new ArrayList<>();
+    private final List<AddonOption> addonOptions = List.of(
+            new AddonOption("Wi-Fi Hotspot", EquipmentType.WIFI, 9.00),
+            new AddonOption("Additional insurance (deductible)", InsuranceType.BASIC, 15.00),
+            new AddonOption("Child Seat", EquipmentType.CHILD_SEAT, 7.00),
+            new AddonOption("Car fridge", EquipmentType.CAR_FRIDGE, 12.00),
+            new AddonOption("Additional Driver", ServiceType.ADDITIONAL_DRIVER, 25.00)
+    );
 
     public ReservationView(Account currentUser) {
-        this(currentUser, null);
+        this(currentUser, null, null);
     }
 
     public ReservationView(Account currentUser, Vehicle preSelectedVehicle) {
+        this(currentUser, preSelectedVehicle, null);
+    }
+
+    public ReservationView(Account currentUser, Vehicle preSelectedVehicle, Consumer<Node> onViewChange) {
         this.currentUser = currentUser;
         this.preSelectedVehicle = preSelectedVehicle;
+        this.onViewChange = onViewChange;
         setupUI();
     }
 
     private void setupUI() {
-        setPadding(new Insets(20));
-        setSpacing(15);
+        getStyleClass().add("booking-root");
+        setPadding(new Insets(22));
 
-        Label title = new Label("Create Reservation");
-        title.setStyle("-fx-font-size: 20px; -fx-font-weight: bold;");
+        VBox page = new VBox(18);
+        page.getStyleClass().add("booking-page");
 
+        Button backBtn = new Button(preSelectedVehicle != null ? "Back to car" : "Back to cars");
+        backBtn.getStyleClass().add("vehicle-detail-back");
+        backBtn.setOnAction(e -> goBack());
+
+        HBox hero = new HBox(22);
+        hero.getStyleClass().add("booking-hero");
+        hero.setAlignment(Pos.CENTER_LEFT);
+
+        VBox intro = new VBox(10);
+        HBox.setHgrow(intro, Priority.ALWAYS);
+        Label eyebrow = new Label("BOOKING DETAILS");
+        eyebrow.getStyleClass().add("booking-eyebrow");
+        Label title = new Label(preSelectedVehicle != null
+                ? "Reserve " + preSelectedVehicle.getMake() + " " + preSelectedVehicle.getModel()
+                : "Create your reservation");
+        title.getStyleClass().add("booking-title");
+        title.setWrapText(true);
+        Label subtitle = new Label("Choose pickup dates, confirm locations, add optional services, then submit your reservation.");
+        subtitle.getStyleClass().add("booking-subtitle");
+        intro.getChildren().addAll(eyebrow, title, subtitle);
+
+        vehicleVisual = new StackPane();
+        vehicleVisual.getStyleClass().add("booking-vehicle-visual");
+        vehicleVisual.setPrefSize(290, 170);
+        hero.getChildren().addAll(intro, vehicleVisual);
+
+        HBox body = new HBox(18);
+        body.setAlignment(Pos.TOP_LEFT);
+
+        VBox formCard = new VBox(16);
+        formCard.getStyleClass().add("booking-card");
+        HBox.setHgrow(formCard, Priority.ALWAYS);
+
+        selectedVehicleLabel = new Label();
+        selectedVehicleLabel.getStyleClass().add("booking-selected-car");
+
+        GridPane bookingGrid = createBookingGrid();
+        VBox addons = createAddonsSection();
+        formCard.getChildren().addAll(selectedVehicleLabel, bookingGrid, addons);
+
+        VBox summaryCard = createSummaryCard();
+        body.getChildren().addAll(formCard, summaryCard);
+        page.getChildren().addAll(backBtn, hero, body);
+
+        ScrollPane scrollPane = new ScrollPane(page);
+        scrollPane.getStyleClass().add("booking-scroll");
+        scrollPane.setFitToWidth(true);
+        VBox.setVgrow(scrollPane, Priority.ALWAYS);
+        getChildren().add(scrollPane);
+
+        configureInitialValues();
+        updateVehiclePreview();
+        updateEstimate();
+    }
+
+    private GridPane createBookingGrid() {
         GridPane grid = new GridPane();
-        grid.setHgap(10);
-        grid.setVgap(10);
+        grid.getStyleClass().add("booking-grid");
+        grid.setHgap(14);
+        grid.setVgap(12);
 
-        ComboBox<Vehicle> vehicleCombo = new ComboBox<>();
-        vehicleCombo.getItems().addAll(vehicleRepo.findAll());
-        if (preSelectedVehicle != null) {
-            for (Vehicle v : vehicleCombo.getItems()) {
-                if (v.getId() == preSelectedVehicle.getId()) {
-                    vehicleCombo.setValue(v);
-                    break;
-                }
+        vehicleCombo = new ComboBox<>();
+        vehicleCombo.getStyleClass().add("booking-input");
+        vehicleCombo.setMaxWidth(Double.MAX_VALUE);
+        vehicleCombo.setConverter(new StringConverter<>() {
+            @Override public String toString(Vehicle vehicle) {
+                return vehicle == null ? "" : vehicle.getMake() + " " + vehicle.getModel() + " - $" + String.format("%.0f", vehicle.getPricePerDay()) + "/day";
             }
-        }
-        
-        ComboBox<Location> pickupLocCombo = new ComboBox<>();
+            @Override public Vehicle fromString(String string) { return null; }
+        });
+        List<Vehicle> vehicles = vehicleRepo.findAll().stream()
+                .filter(v -> v.isActive() && v.getStatus() == VehicleStatus.AVAILABLE)
+                .collect(Collectors.toList());
+        vehicleCombo.setItems(FXCollections.observableArrayList(vehicles));
+
         List<Location> locations = locationRepo.findAll();
-        pickupLocCombo.getItems().addAll(locations);
-        
-        ComboBox<Location> returnLocCombo = new ComboBox<>();
-        returnLocCombo.getItems().addAll(locations);
+        pickupLocCombo = new ComboBox<>(FXCollections.observableArrayList(locations));
+        returnLocCombo = new ComboBox<>(FXCollections.observableArrayList(locations));
+        pickupLocCombo.getStyleClass().add("booking-input");
+        returnLocCombo.getStyleClass().add("booking-input");
+        pickupLocCombo.setMaxWidth(Double.MAX_VALUE);
+        returnLocCombo.setMaxWidth(Double.MAX_VALUE);
 
-        DatePicker pickupDatePicker = new DatePicker(java.time.LocalDate.now().plusDays(1));
-        DatePicker dueDatePicker = new DatePicker();
-        dueDatePicker.setDayCellFactory(picker -> new DateCell() {
-            @Override
-            public void updateItem(java.time.LocalDate date, boolean empty) {
+        pickupDatePicker = new DatePicker(LocalDate.now().plusDays(1));
+        returnDatePicker = new DatePicker(LocalDate.now().plusDays(2));
+        pickupDatePicker.getStyleClass().add("booking-input");
+        returnDatePicker.getStyleClass().add("booking-input");
+        pickupDatePicker.setEditable(false);
+        returnDatePicker.setEditable(false);
+        pickupDatePicker.setDayCellFactory(picker -> unavailableBefore(LocalDate.now()));
+        returnDatePicker.setDayCellFactory(picker -> unavailableBefore(LocalDate.now().plusDays(1)));
+
+        addField(grid, 0, "Vehicle", vehicleCombo);
+        addField(grid, 1, "Pickup location", pickupLocCombo);
+        addField(grid, 2, "Return location", returnLocCombo);
+        addField(grid, 3, "Pickup date", pickupDatePicker);
+        addField(grid, 4, "Return date", returnDatePicker);
+
+        vehicleCombo.valueProperty().addListener((obs, oldValue, newValue) -> {
+            if (newValue != null) {
+                pickupLocCombo.getItems().stream()
+                        .filter(location -> location.getId() == newValue.getLocationId())
+                        .findFirst()
+                        .ifPresent(location -> {
+                            pickupLocCombo.setValue(location);
+                            if (returnLocCombo.getValue() == null) {
+                                returnLocCombo.setValue(location);
+                            }
+                        });
+            }
+            updateVehiclePreview();
+            updateEstimate();
+        });
+        pickupDatePicker.valueProperty().addListener((obs, oldValue, newValue) -> updateEstimate());
+        returnDatePicker.valueProperty().addListener((obs, oldValue, newValue) -> updateEstimate());
+
+        return grid;
+    }
+
+    private DateCell unavailableBefore(LocalDate minDate) {
+        return new DateCell() {
+            @Override public void updateItem(LocalDate date, boolean empty) {
                 super.updateItem(date, empty);
-                setDisable(empty || date.isBefore(java.time.LocalDate.now()));
+                setDisable(empty || date.isBefore(minDate));
             }
-        });
-        pickupDatePicker.setDayCellFactory(picker -> new DateCell() {
-            @Override
-            public void updateItem(java.time.LocalDate date, boolean empty) {
-                super.updateItem(date, empty);
-                setDisable(empty || date.isBefore(java.time.LocalDate.now()));
-            }
-        });
+        };
+    }
 
-        ComboBox<VehicleType> typeFilter = new ComboBox<>(javafx.collections.FXCollections.observableArrayList(VehicleType.values()));
-        typeFilter.setPromptText("Any type");
-        ComboBox<TransmissionType> transmissionFilter = new ComboBox<>(javafx.collections.FXCollections.observableArrayList(TransmissionType.values()));
-        transmissionFilter.setPromptText("Any transmission");
-        ComboBox<FuelType> fuelFilter = new ComboBox<>(javafx.collections.FXCollections.observableArrayList(FuelType.values()));
-        fuelFilter.setPromptText("Any fuel");
-        TextField minPriceField = new TextField();
-        minPriceField.setPromptText("Min price");
-        TextField maxPriceField = new TextField();
-        maxPriceField.setPromptText("Max price");
-        TextField capacityField = new TextField();
-        capacityField.setPromptText("Min seats");
-        Label statusLabel = new Label();
+    private VBox createAddonsSection() {
+        VBox section = new VBox(12);
+        Label title = new Label("Optional add-ons");
+        title.getStyleClass().add("booking-section-title");
 
-        Button searchVehiclesBtn = new Button("Search Available Vehicles");
-        searchVehiclesBtn.setOnAction(e -> {
-            if (pickupDatePicker.getValue() == null || dueDatePicker.getValue() == null) {
-                statusLabel.setText("Select pickup and return dates first.");
-                statusLabel.setStyle("-fx-text-fill: red;");
-                return;
-            }
-            LocalDateTime pickup = pickupDatePicker.getValue().atTime(10, 0);
-            LocalDateTime due = dueDatePicker.getValue().atTime(12, 0);
-            if (!due.isAfter(pickup)) {
-                statusLabel.setText("Return date must be after pickup date.");
-                statusLabel.setStyle("-fx-text-fill: red;");
-                return;
-            }
-            Double minPrice = parseDoubleOrNull(minPriceField.getText());
-            Double maxPrice = parseDoubleOrNull(maxPriceField.getText());
-            Integer capacity = parseIntOrNull(capacityField.getText());
-            Integer pickupLocationId = pickupLocCombo.getValue() != null ? pickupLocCombo.getValue().getId() : null;
-            vehicleCombo.getItems().setAll(vehicleRepo.searchAvailableVehicles(
-                    pickupLocationId,
-                    returnLocCombo.getValue() != null ? returnLocCombo.getValue().getId() : null,
-                    pickup,
-                    due,
-                    typeFilter.getValue(),
-                    minPrice,
-                    maxPrice,
-                    transmissionFilter.getValue(),
-                    fuelFilter.getValue(),
-                    capacity
-            ));
-            statusLabel.setText(vehicleCombo.getItems().size() + " vehicles available for the selected dates.");
-            statusLabel.setStyle("-fx-text-fill: #2c3e50;");
-        });
+        FlowPane addonsFlow = new FlowPane(10, 10);
+        for (AddonOption option : addonOptions) {
+            CheckBox checkBox = createAddonCheck(option);
+            addonChecks.add(checkBox);
+            addonsFlow.getChildren().add(checkBox);
+        }
 
-        // Auto-select pickup location when vehicle is selected
-        javafx.scene.image.ImageView vehiclePreview = new javafx.scene.image.ImageView();
-        vehiclePreview.setFitWidth(200);
-        vehiclePreview.setFitHeight(120);
-        vehiclePreview.setPreserveRatio(true);
-        vehiclePreview.setStyle("-fx-border-color: #ddd; -fx-border-width: 1; -fx-border-style: solid;");
+        section.getChildren().addAll(title, addonsFlow);
+        return section;
+    }
 
-        vehicleCombo.valueProperty().addListener((obs, oldVal, newVal) -> {
-            if (newVal != null) {
-                for (Location loc : pickupLocCombo.getItems()) {
-                    if (loc.getId() == newVal.getLocationId()) {
-                        pickupLocCombo.setValue(loc);
-                        break;
-                    }
-                }
-                if (newVal.getImagePath() != null && !newVal.getImagePath().isBlank()) {
-                    try {
-                        vehiclePreview.setImage(new javafx.scene.image.Image(newVal.getImagePath()));
-                    } catch (Exception ex) {
-                        vehiclePreview.setImage(null);
-                    }
-                } else {
-                    vehiclePreview.setImage(null);
-                }
-            } else {
-                vehiclePreview.setImage(null);
-            }
-        });
+    private CheckBox createAddonCheck(AddonOption option) {
+        CheckBox checkBox = new CheckBox(option.label() + "  $" + String.format("%.0f", option.price()));
+        checkBox.setUserData(option);
+        checkBox.getStyleClass().add("booking-addon");
+        checkBox.selectedProperty().addListener((obs, oldValue, newValue) -> updateEstimate());
+        return checkBox;
+    }
 
-        // Trigger listener if pre-selected
+    private VBox createSummaryCard() {
+        VBox card = new VBox(14);
+        card.getStyleClass().add("booking-summary-card");
+        card.setPrefWidth(330);
+
+        Label title = new Label("Reservation summary");
+        title.getStyleClass().add("booking-summary-title");
+        daysLabel = new Label();
+        daysLabel.getStyleClass().add("booking-summary-muted");
+        estimateLabel = new Label();
+        estimateLabel.getStyleClass().add("booking-estimate");
+
+        receiptLinesBox = new VBox(8);
+        receiptLinesBox.getStyleClass().add("booking-receipt-lines");
+
+        VBox included = new VBox(8,
+                createSummaryLine("Daily mileage", "300 km/day"),
+                createSummaryLine("Fuel policy", "Return same level"),
+                createSummaryLine("Status", "Confirmed after submit"));
+
+        Button submitBtn = new Button("Confirm reservation");
+        submitBtn.getStyleClass().add("booking-submit");
+        submitBtn.setMaxWidth(Double.MAX_VALUE);
+        submitBtn.setOnAction(e -> submitReservation());
+
+        statusLabel = new Label();
+        statusLabel.getStyleClass().add("booking-status");
+        statusLabel.setWrapText(true);
+
+        card.getChildren().addAll(title, daysLabel, receiptLinesBox, estimateLabel, included, submitBtn, statusLabel);
+        return card;
+    }
+
+    private HBox createSummaryLine(String label, String value) {
+        HBox row = new HBox(8);
+        row.setAlignment(Pos.CENTER_LEFT);
+        Label left = new Label(label);
+        left.getStyleClass().add("booking-summary-muted");
+        Region spacer = new Region();
+        HBox.setHgrow(spacer, Priority.ALWAYS);
+        Label right = new Label(value);
+        right.getStyleClass().add("booking-summary-value");
+        row.getChildren().addAll(left, spacer, right);
+        return row;
+    }
+
+    private void addField(GridPane grid, int row, String label, Node node) {
+        Label labelNode = new Label(label);
+        labelNode.getStyleClass().add("booking-field-label");
+        GridPane.setHgrow(node, Priority.ALWAYS);
+        grid.add(labelNode, 0, row);
+        grid.add(node, 1, row);
+    }
+
+    private void configureInitialValues() {
+        if (preSelectedVehicle != null) {
+            vehicleCombo.getItems().stream()
+                    .filter(vehicle -> vehicle.getId() == preSelectedVehicle.getId())
+                    .findFirst()
+                    .ifPresent(vehicleCombo::setValue);
+            vehicleCombo.setDisable(true);
+        } else if (!vehicleCombo.getItems().isEmpty()) {
+            vehicleCombo.setValue(vehicleCombo.getItems().get(0));
+        }
+
         if (vehicleCombo.getValue() != null) {
-            Vehicle val = vehicleCombo.getValue();
-            for (Location loc : pickupLocCombo.getItems()) {
-                if (loc.getId() == val.getLocationId()) {
-                    pickupLocCombo.setValue(loc);
-                    break;
-                }
-            }
-            if (val.getImagePath() != null && !val.getImagePath().isBlank()) {
-                try {
-                    vehiclePreview.setImage(new javafx.scene.image.Image(val.getImagePath()));
-                } catch (Exception ex) {}
-            }
+            pickupLocCombo.getItems().stream()
+                    .filter(location -> location.getId() == vehicleCombo.getValue().getLocationId())
+                    .findFirst()
+                    .ifPresent(location -> {
+                        pickupLocCombo.setValue(location);
+                        returnLocCombo.setValue(location);
+                    });
+        }
+        if (returnLocCombo.getValue() == null && !returnLocCombo.getItems().isEmpty()) {
+            returnLocCombo.setValue(returnLocCombo.getItems().get(0));
+        }
+    }
+
+    private void updateVehiclePreview() {
+        vehicleVisual.getChildren().clear();
+        Vehicle vehicle = vehicleCombo.getValue();
+        if (vehicle == null) {
+            selectedVehicleLabel.setText("Choose an available automobile to continue.");
+            return;
         }
 
-        grid.add(new Label("Preview:"), 2, 0, 1, 3);
-        grid.add(vehiclePreview, 2, 1, 1, 5);
-
-        // Add-ons Section
-        VBox addonsBox = new VBox(10);
-        addonsBox.setPadding(new Insets(10));
-        addonsBox.setStyle("-fx-border-color: #ddd; -fx-border-radius: 5;");
-        
-        Label addonsTitle = new Label("Additional Services & Add-ons");
-        addonsTitle.setStyle("-fx-font-weight: bold;");
-        
-        GridPane addonsGrid = new GridPane();
-        addonsGrid.setHgap(20);
-        addonsGrid.setVgap(10);
-
-        List<CheckBox> insuranceChecks = new ArrayList<>();
-        int iIdx = 0;
-        for (InsuranceType type : InsuranceType.values()) {
-            CheckBox cb = new CheckBox(type.name());
-            cb.setUserData(type);
-            insuranceChecks.add(cb);
-            addonsGrid.add(cb, 0, iIdx++);
-        }
-
-        List<CheckBox> equipmentChecks = new ArrayList<>();
-        iIdx = 0;
-        for (EquipmentType type : EquipmentType.values()) {
-            CheckBox cb = new CheckBox(type.name());
-            cb.setUserData(type);
-            equipmentChecks.add(cb);
-            addonsGrid.add(cb, 1, iIdx++);
-        }
-
-        List<CheckBox> serviceChecks = new ArrayList<>();
-        iIdx = 0;
-        for (ServiceType type : ServiceType.values()) {
-            CheckBox cb = new CheckBox(type.name());
-            cb.setUserData(type);
-            serviceChecks.add(cb);
-            addonsGrid.add(cb, 2, iIdx++);
-        }
-        addonsBox.getChildren().addAll(addonsTitle, addonsGrid);
-
-        Button submitBtn = new Button("Confirm Reservation");
-
-        submitBtn.setOnAction(e -> {
+        selectedVehicleLabel.setText(vehicle.getMake() + " " + vehicle.getModel() + " selected");
+        if (vehicle.getImagePath() != null && !vehicle.getImagePath().isBlank()) {
             try {
-                Vehicle v = vehicleCombo.getValue();
-                Location p = pickupLocCombo.getValue();
-                Location r = returnLocCombo.getValue();
-                if (v == null || p == null || r == null || pickupDatePicker.getValue() == null || dueDatePicker.getValue() == null) {
-                    statusLabel.setText("Please select vehicle, locations, pickup date, and return date.");
-                    statusLabel.setStyle("-fx-text-fill: red;");
-                    return;
-                }
-                LocalDateTime pickup = pickupDatePicker.getValue().atTime(10, 0);
-                LocalDateTime due = dueDatePicker.getValue().atTime(12, 0);
-                if (!due.isAfter(pickup)) {
-                    statusLabel.setText("Return date must be after pickup date.");
-                    statusLabel.setStyle("-fx-text-fill: red;");
-                    return;
-                }
-
-                Member member = memberRepo.findByAccountId(currentUser.getId());
-                if (member == null) {
-                    statusLabel.setText("Only members can create reservations.");
-                    return;
-                }
-
-                List<InsuranceType> selectedInsurances = new ArrayList<>();
-                for (CheckBox cb : insuranceChecks) if (cb.isSelected()) selectedInsurances.add((InsuranceType) cb.getUserData());
-
-                List<EquipmentType> selectedEquipments = new ArrayList<>();
-                for (CheckBox cb : equipmentChecks) if (cb.isSelected()) selectedEquipments.add((EquipmentType) cb.getUserData());
-
-                List<ServiceType> selectedServices = new ArrayList<>();
-                for (CheckBox cb : serviceChecks) if (cb.isSelected()) selectedServices.add((ServiceType) cb.getUserData());
-
-                String reservationNumber = resService.createReservation(member.getId(), v.getId(), p.getId(), r.getId(), pickup, due, selectedInsurances, selectedEquipments, selectedServices);
-                statusLabel.setText("Reservation created successfully!");
-                BillRepository billRepo = new BillRepository();
-                com.cs210.project.models.VehicleReservation created = new ReservationRepository().findByNumber(reservationNumber);
-                com.cs210.project.models.Bill bill = created != null ? billRepo.findByReservationId(created.getId()) : null;
-                if (bill != null) statusLabel.setText("Reservation created. Estimated bill: $" + bill.getTotalAmount());
-                statusLabel.setStyle("-fx-text-fill: green;");
-            } catch (Exception ex) {
-                statusLabel.setText("Error: " + ex.getMessage());
-                statusLabel.setStyle("-fx-text-fill: red;");
+                ImageView imageView = new ImageView(new Image(vehicle.getImagePath(), 290, 170, true, true, true));
+                imageView.setFitWidth(290);
+                imageView.setFitHeight(170);
+                imageView.setPreserveRatio(true);
+                vehicleVisual.getChildren().add(imageView);
+                return;
+            } catch (Exception ignored) {
+                // Use placeholder below.
             }
-        });
-
-        grid.add(new Label("Vehicle:"), 0, 0);
-        grid.add(vehicleCombo, 1, 0);
-        grid.add(new Label("Pickup Location:"), 0, 1);
-        grid.add(pickupLocCombo, 1, 1);
-        grid.add(new Label("Return Location:"), 0, 2);
-        grid.add(returnLocCombo, 1, 2);
-        grid.add(new Label("Pickup Date:"), 0, 3);
-        grid.add(pickupDatePicker, 1, 3);
-        grid.add(new Label("Return Date:"), 0, 4);
-        grid.add(dueDatePicker, 1, 4);
-        grid.add(new Label("Type:"), 0, 5);
-        grid.add(typeFilter, 1, 5);
-        grid.add(new Label("Price Range:"), 0, 6);
-        grid.add(new HBox(5, minPriceField, maxPriceField), 1, 6);
-        grid.add(new Label("Transmission:"), 0, 7);
-        grid.add(transmissionFilter, 1, 7);
-        grid.add(new Label("Fuel:"), 0, 8);
-        grid.add(fuelFilter, 1, 8);
-        grid.add(new Label("Capacity:"), 0, 9);
-        grid.add(capacityField, 1, 9);
-        grid.add(searchVehiclesBtn, 1, 10);
-        grid.add(submitBtn, 1, 11);
-
-        getChildren().addAll(title, grid, addonsBox, statusLabel);
+        }
+        VBox placeholder = new VBox(4);
+        placeholder.setAlignment(Pos.CENTER);
+        Label make = new Label(vehicle.getMake());
+        make.getStyleClass().add("booking-placeholder-make");
+        Label model = new Label(vehicle.getModel());
+        model.getStyleClass().add("booking-placeholder-model");
+        placeholder.getChildren().addAll(make, model);
+        vehicleVisual.getChildren().add(placeholder);
     }
 
-    private Double parseDoubleOrNull(String value) {
+    private void updateEstimate() {
+        Vehicle vehicle = vehicleCombo == null ? null : vehicleCombo.getValue();
+        long days = calculateDays();
+        double base = vehicle == null ? 0 : vehicle.getPricePerDay() * days;
+        List<AddonOption> selectedAddons = selectedAddonOptions();
+        double addons = selectedAddons.stream().mapToDouble(AddonOption::price).sum();
+        daysLabel.setText(days + (days == 1 ? " rental day" : " rental days"));
+
+        if (receiptLinesBox != null) {
+            receiptLinesBox.getChildren().clear();
+            String baseLabel = vehicle == null ? "Base rental" : "Base rental: " + vehicle.getMake() + " " + vehicle.getModel();
+            receiptLinesBox.getChildren().add(createReceiptLine(baseLabel, String.format("%d x $%.2f", days, vehicle == null ? 0 : vehicle.getPricePerDay()), base));
+            for (AddonOption option : selectedAddons) {
+                receiptLinesBox.getChildren().add(createReceiptLine(option.label(), "Add-on", option.price()));
+            }
+            if (selectedAddons.isEmpty()) {
+                receiptLinesBox.getChildren().add(createReceiptNote("No additional services selected."));
+            }
+        }
+
+        estimateLabel.setText(String.format("Estimated total: $%.2f", base + addons));
+    }
+
+    private HBox createReceiptLine(String label, String detail, double amount) {
+        HBox row = new HBox(8);
+        row.getStyleClass().add("booking-receipt-line");
+        row.setAlignment(Pos.CENTER_LEFT);
+        VBox text = new VBox(2);
+        Label labelNode = new Label(label);
+        labelNode.getStyleClass().add("booking-receipt-label");
+        Label detailNode = new Label(detail);
+        detailNode.getStyleClass().add("booking-receipt-detail");
+        text.getChildren().addAll(labelNode, detailNode);
+        Region spacer = new Region();
+        HBox.setHgrow(spacer, Priority.ALWAYS);
+        Label amountNode = new Label(String.format("$%.2f", amount));
+        amountNode.getStyleClass().add("booking-receipt-amount");
+        row.getChildren().addAll(text, spacer, amountNode);
+        return row;
+    }
+
+    private Label createReceiptNote(String text) {
+        Label note = new Label(text);
+        note.getStyleClass().add("booking-receipt-note");
+        return note;
+    }
+
+    private List<AddonOption> selectedAddonOptions() {
+        return addonChecks.stream()
+                .filter(CheckBox::isSelected)
+                .map(checkBox -> (AddonOption) checkBox.getUserData())
+                .collect(Collectors.toList());
+    }
+
+    private long calculateDays() {
+        if (pickupDatePicker == null || returnDatePicker == null || pickupDatePicker.getValue() == null || returnDatePicker.getValue() == null) {
+            return 1;
+        }
+        long days = ChronoUnit.DAYS.between(pickupDatePicker.getValue(), returnDatePicker.getValue());
+        return Math.max(days, 1);
+    }
+
+    private void submitReservation() {
         try {
-            return value == null || value.isBlank() ? null : Double.parseDouble(value);
-        } catch (NumberFormatException e) {
-            return null;
+            Vehicle vehicle = vehicleCombo.getValue();
+            Location pickup = pickupLocCombo.getValue();
+            Location returnLocation = returnLocCombo.getValue();
+            if (vehicle == null || pickup == null || returnLocation == null || pickupDatePicker.getValue() == null || returnDatePicker.getValue() == null) {
+                showStatus("Please choose vehicle, locations, pickup date, and return date.", false);
+                return;
+            }
+
+            LocalDateTime pickupDate = pickupDatePicker.getValue().atTime(10, 0);
+            LocalDateTime returnDate = returnDatePicker.getValue().atTime(12, 0);
+            if (!returnDate.isAfter(pickupDate)) {
+                showStatus("Return date must be after pickup date.", false);
+                return;
+            }
+
+            Member member = memberRepo.findByAccountId(currentUser.getId());
+            if (member == null) {
+                showStatus("Only members can create reservations.", false);
+                return;
+            }
+
+            String reservationNumber = resService.createReservation(
+                    member.getId(),
+                    vehicle.getId(),
+                    pickup.getId(),
+                    returnLocation.getId(),
+                    pickupDate,
+                    returnDate,
+                    selectedInsuranceTypes(),
+                    selectedEquipmentTypes(),
+                    selectedServiceTypes());
+
+            Bill bill = null;
+            com.cs210.project.models.VehicleReservation reservation = new ReservationRepository().findByNumber(reservationNumber);
+            if (reservation != null) {
+                bill = new BillRepository().findByReservationId(reservation.getId());
+            }
+            String amount = bill != null && bill.getTotalAmount() != null ? " Estimated bill: $" + bill.getTotalAmount() + "." : "";
+            showStatus("Reservation " + reservationNumber + " created successfully." + amount, true);
+        } catch (Exception ex) {
+            showStatus("Reservation error: " + ex.getMessage(), false);
         }
     }
 
-    private Integer parseIntOrNull(String value) {
-        try {
-            return value == null || value.isBlank() ? null : Integer.parseInt(value);
-        } catch (NumberFormatException e) {
-            return null;
+    private List<InsuranceType> selectedInsuranceTypes() {
+        return addonChecks.stream()
+                .filter(CheckBox::isSelected)
+                .map(checkBox -> (AddonOption) checkBox.getUserData())
+                .map(AddonOption::type)
+                .filter(InsuranceType.class::isInstance)
+                .map(InsuranceType.class::cast)
+                .collect(Collectors.toList());
+    }
+
+    private List<EquipmentType> selectedEquipmentTypes() {
+        return addonChecks.stream()
+                .filter(CheckBox::isSelected)
+                .map(checkBox -> (AddonOption) checkBox.getUserData())
+                .map(AddonOption::type)
+                .filter(EquipmentType.class::isInstance)
+                .map(EquipmentType.class::cast)
+                .collect(Collectors.toList());
+    }
+
+    private List<ServiceType> selectedServiceTypes() {
+        return addonChecks.stream()
+                .filter(CheckBox::isSelected)
+                .map(checkBox -> (AddonOption) checkBox.getUserData())
+                .map(AddonOption::type)
+                .filter(ServiceType.class::isInstance)
+                .map(ServiceType.class::cast)
+                .collect(Collectors.toList());
+    }
+
+    private void showStatus(String message, boolean success) {
+        statusLabel.setText(message);
+        statusLabel.getStyleClass().removeAll("booking-status-success", "booking-status-error");
+        statusLabel.getStyleClass().add(success ? "booking-status-success" : "booking-status-error");
+    }
+
+    private void goBack() {
+        if (onViewChange == null) {
+            return;
+        }
+        if (preSelectedVehicle != null) {
+            onViewChange.accept(new VehicleDetailView(currentUser, preSelectedVehicle, onViewChange));
+        } else {
+            onViewChange.accept(new VehiclesView(currentUser, onViewChange));
         }
     }
+
+    private record AddonOption(String label, Object type, double price) {}
 }

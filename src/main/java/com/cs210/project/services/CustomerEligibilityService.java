@@ -15,11 +15,8 @@ public class CustomerEligibilityService {
     public static final int MINIMUM_RENTAL_AGE = 18;
 
     public void validateCustomerEligibility(int memberId) throws Exception {
-        String sql = "SELECT a.status, a.is_active, m.driver_license_expiry, p.birth_date " +
-                "FROM members m JOIN accounts a ON m.account_id = a.id JOIN persons p ON a.person_id = p.id " +
-                "WHERE m.id = ?";
         try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+             PreparedStatement pstmt = conn.prepareStatement(buildEligibilitySql(conn))) {
             pstmt.setInt(1, memberId);
             try (ResultSet rs = pstmt.executeQuery()) {
                 if (!rs.next()) throw new Exception("Customer account not found.");
@@ -32,9 +29,11 @@ public class CustomerEligibilityService {
                         rs.getTimestamp("driver_license_expiry").toLocalDateTime().isBefore(java.time.LocalDateTime.now())) {
                     throw new Exception("Driving license is expired.");
                 }
-                LocalDate birthDate = rs.getDate("birth_date") != null ? rs.getDate("birth_date").toLocalDate() : null;
-                if (birthDate == null || Period.between(birthDate, LocalDate.now()).getYears() < MINIMUM_RENTAL_AGE) {
-                    throw new Exception("Customer must be at least " + MINIMUM_RENTAL_AGE + " years old.");
+                if (hasColumn(conn, "persons", "birth_date")) {
+                    LocalDate birthDate = rs.getDate("birth_date") != null ? rs.getDate("birth_date").toLocalDate() : null;
+                    if (birthDate == null || Period.between(birthDate, LocalDate.now()).getYears() < MINIMUM_RENTAL_AGE) {
+                        throw new Exception("Customer must be at least " + MINIMUM_RENTAL_AGE + " years old.");
+                    }
                 }
             }
         } catch (SQLException e) {
@@ -80,5 +79,22 @@ public class CustomerEligibilityService {
             }
         }
         return false;
+    }
+
+    private String buildEligibilitySql(Connection conn) throws SQLException {
+        if (hasColumn(conn, "persons", "birth_date")) {
+            return "SELECT a.status, a.is_active, m.driver_license_expiry, p.birth_date " +
+                    "FROM members m JOIN accounts a ON m.account_id = a.id JOIN persons p ON a.person_id = p.id " +
+                    "WHERE m.id = ?";
+        }
+        return "SELECT a.status, a.is_active, m.driver_license_expiry " +
+                "FROM members m JOIN accounts a ON m.account_id = a.id JOIN persons p ON a.person_id = p.id " +
+                "WHERE m.id = ?";
+    }
+
+    private boolean hasColumn(Connection conn, String tableName, String columnName) throws SQLException {
+        try (ResultSet rs = conn.getMetaData().getColumns(conn.getCatalog(), null, tableName, columnName)) {
+            return rs.next();
+        }
     }
 }

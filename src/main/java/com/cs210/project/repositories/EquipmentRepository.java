@@ -34,7 +34,7 @@ public class EquipmentRepository {
                     Equipment eq = new Equipment();
                     eq.setId(rs.getInt("id"));
                     eq.setReservationId(rs.getInt("reservation_id"));
-                    eq.setEquipmentType(EquipmentType.values()[rs.getInt("equipment_type") - 1]);
+                    eq.setEquipmentType(EquipmentType.fromInt(rs.getInt("equipment_type")));
                     eq.setPrice(rs.getBigDecimal("price"));
                     list.add(eq);
                 }

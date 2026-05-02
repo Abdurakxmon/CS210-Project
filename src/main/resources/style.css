@@ -1,48 +1,388 @@
-/* Base Styles */
+/* Base */
 .root {
-    -fx-font-family: "Segoe UI", Helvetica, Arial, sans-serif;
+    -fx-font-family: "Bahnschrift", "Segoe UI", Arial, sans-serif;
+    -fx-focus-color: transparent;
+    -fx-faint-focus-color: transparent;
 }
 
-/* Auth / Login Styles */
-.auth-container {
+/* Shared Auth Elements */
+.auth-input {
+    -fx-background-color: #f4f6fb;
+    -fx-border-color: #cfd7e6;
+    -fx-border-radius: 10;
+    -fx-background-radius: 10;
+    -fx-padding: 10 14 10 14;
+    -fx-text-fill: #122033;
+}
+
+.auth-input:focused {
     -fx-background-color: white;
+    -fx-border-color: #1f6feb;
 }
 
-.auth-left-pane {
-    -fx-background-color: #1a1a1a;
+.auth-input-valid {
+    -fx-background-color: #eefaf2;
+    -fx-border-color: #2f9d57;
 }
 
-.auth-overlay {
-    -fx-background-color: rgba(0, 0, 0, 0.4);
+.auth-input-valid:focused {
+    -fx-background-color: #eefaf2;
+    -fx-border-color: #2f9d57;
 }
 
-.auth-brand-name {
+.auth-input-invalid {
+    -fx-background-color: #fff3f3;
+    -fx-border-color: #cb4e4e;
+}
+
+.auth-input-invalid:focused {
+    -fx-background-color: #fff3f3;
+    -fx-border-color: #cb4e4e;
+}
+
+.auth-primary-btn {
+    -fx-background-color: linear-gradient(to right, #124ea3, #1f6feb);
     -fx-text-fill: white;
-    -fx-font-size: 32px;
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+    -fx-background-radius: 10;
+    -fx-cursor: hand;
+    -fx-padding: 12 20 12 20;
+}
+
+.auth-primary-btn:hover {
+    -fx-background-color: linear-gradient(to right, #1b5dbd, #2d78ef);
+}
+
+.auth-primary-btn:disabled {
+    -fx-opacity: 0.7;
+}
+
+.auth-secondary-btn {
+    -fx-background-color: transparent;
+    -fx-border-color: #b9c4d8;
+    -fx-border-radius: 10;
+    -fx-background-radius: 10;
+    -fx-text-fill: #2e4668;
+    -fx-cursor: hand;
+    -fx-padding: 11 16 11 16;
+}
+
+.auth-secondary-btn:hover {
+    -fx-background-color: rgba(12, 42, 90, 0.06);
+}
+
+.auth-feedback {
+    -fx-text-fill: #b03a2e;
+    -fx-font-size: 12px;
+}
+
+.auth-feedback-success {
+    -fx-text-fill: #1f8a4c;
+}
+
+.auth-feedback-error {
+    -fx-text-fill: #b03a2e;
+}
+
+.auth-link {
+    -fx-text-fill: #1f6feb;
+    -fx-underline: false;
+    -fx-font-size: 12px;
+}
+
+.auth-link:hover {
+    -fx-text-fill: #124ea3;
+}
+
+.auth-loading {
+    -fx-progress-color: #1f6feb;
+}
+
+/* Login */
+.auth-root {
+    -fx-background-color: linear-gradient(to bottom right, #eaf1fb 0%, #f4f7ff 45%, #ffffff 100%);
+}
+
+.auth-shell {
+    -fx-padding: 18;
+    -fx-spacing: 18;
+}
+
+.auth-hero-pane {
+    -fx-background-color: linear-gradient(to bottom right, #0f2238, #122f55 55%, #1a4b87);
+    -fx-background-radius: 18;
+    -fx-effect: dropshadow(gaussian, rgba(7, 25, 48, 0.38), 24, 0.12, 0, 8);
+}
+
+.auth-hero-badge {
+    -fx-background-color: rgba(255, 255, 255, 0.15);
+    -fx-background-radius: 999;
+    -fx-text-fill: #d7e5ff;
+    -fx-font-size: 11px;
+    -fx-font-weight: bold;
+    -fx-padding: 6 12 6 12;
+}
+
+.auth-hero-title {
+    -fx-text-fill: white;
+    -fx-font-size: 40px;
     -fx-font-weight: bold;
 }
 
-.auth-slogan {
-    -fx-text-fill: #ecf0f1;
-    -fx-font-size: 16px;
-}
-
-.auth-right-pane {
-    -fx-background-color: white;
-}
-
-.auth-welcome-label {
-    -fx-font-size: 28px;
-    -fx-font-weight: bold;
-    -fx-text-fill: #2c3e50;
-}
-
-.auth-subtext {
-    -fx-text-fill: #7f8c8d;
+.auth-hero-subtitle {
+    -fx-text-fill: #d8e3f7;
     -fx-font-size: 14px;
 }
 
-/* Form Elements */
+.auth-hero-image-card {
+    -fx-background-color: rgba(255, 255, 255, 0.14);
+    -fx-background-radius: 14;
+    -fx-padding: 10;
+    -fx-max-width: 440;
+}
+
+.auth-hero-image {
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.22), 12, 0.05, 0, 4);
+}
+
+.auth-panel-wrap {
+    -fx-background-color: transparent;
+}
+
+.auth-card {
+    -fx-background-color: rgba(255, 255, 255, 0.94);
+    -fx-background-radius: 16;
+    -fx-padding: 26;
+    -fx-effect: dropshadow(gaussian, rgba(12, 22, 38, 0.16), 28, 0.05, 0, 10);
+}
+
+.auth-title {
+    -fx-text-fill: #13233a;
+    -fx-font-size: 30px;
+    -fx-font-weight: bold;
+}
+
+.auth-subtitle {
+    -fx-text-fill: #5d6f8b;
+    -fx-font-size: 13px;
+}
+
+/* Registration */
+.register-root {
+    -fx-background-color: linear-gradient(to bottom right, #edf3fb 0%, #f7f9ff 48%, #ffffff 100%);
+}
+
+.register-shell {
+    -fx-padding: 18;
+    -fx-spacing: 18;
+}
+
+.register-info-pane {
+    -fx-background-color: linear-gradient(to bottom right, #123963, #1f588f 58%, #2977b9);
+    -fx-background-radius: 18;
+    -fx-effect: dropshadow(gaussian, rgba(14, 37, 64, 0.35), 24, 0.1, 0, 8);
+}
+
+.register-info-badge {
+    -fx-background-color: rgba(255, 255, 255, 0.2);
+    -fx-background-radius: 999;
+    -fx-text-fill: #eaf2ff;
+    -fx-font-size: 11px;
+    -fx-font-weight: bold;
+    -fx-padding: 6 12 6 12;
+}
+
+.register-info-title {
+    -fx-text-fill: white;
+    -fx-font-size: 34px;
+    -fx-font-weight: bold;
+}
+
+.register-info-body {
+    -fx-text-fill: #e3efff;
+    -fx-font-size: 14px;
+}
+
+.register-info-image-card {
+    -fx-background-color: rgba(255, 255, 255, 0.14);
+    -fx-background-radius: 14;
+    -fx-padding: 10;
+    -fx-max-width: 440;
+}
+
+.register-info-image {
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.2), 12, 0.05, 0, 4);
+}
+
+.register-check-title {
+    -fx-text-fill: #eff6ff;
+    -fx-font-size: 15px;
+    -fx-font-weight: bold;
+    -fx-padding: 8 0 2 0;
+}
+
+.register-rule-row {
+    -fx-alignment: center-left;
+}
+
+.register-rule-icon {
+    -fx-min-width: 22px;
+    -fx-min-height: 22px;
+    -fx-alignment: center;
+    -fx-font-size: 10px;
+    -fx-font-weight: bold;
+    -fx-background-radius: 999;
+}
+
+.register-rule-text {
+    -fx-text-fill: #e8f2ff;
+    -fx-font-size: 13px;
+}
+
+.register-rule-neutral .register-rule-icon {
+    -fx-background-color: #d8e7ff;
+    -fx-text-fill: #315f96;
+}
+
+.register-rule-neutral .register-rule-text {
+    -fx-text-fill: #e8f2ff;
+}
+
+.register-rule-valid .register-rule-icon {
+    -fx-background-color: #cbeed7;
+    -fx-text-fill: #176235;
+}
+
+.register-rule-valid .register-rule-text {
+    -fx-text-fill: #d9f8e2;
+}
+
+.register-rule-invalid .register-rule-icon {
+    -fx-background-color: #ffd4d4;
+    -fx-text-fill: #8b2f2f;
+}
+
+.register-rule-invalid .register-rule-text {
+    -fx-text-fill: #ffdede;
+}
+
+.register-info-hint {
+    -fx-text-fill: #d5e7ff;
+    -fx-font-size: 12px;
+}
+
+.register-form-wrap {
+    -fx-background-color: transparent;
+}
+
+.register-card-modern {
+    -fx-background-color: rgba(255, 255, 255, 0.96);
+    -fx-background-radius: 16;
+    -fx-padding: 24;
+    -fx-effect: dropshadow(gaussian, rgba(12, 22, 38, 0.15), 24, 0.06, 0, 9);
+}
+
+.register-title {
+    -fx-text-fill: #13233a;
+    -fx-font-size: 28px;
+    -fx-font-weight: bold;
+}
+
+.register-subtitle {
+    -fx-text-fill: #5d6f8b;
+    -fx-font-size: 13px;
+}
+
+.register-section-label {
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #2c4566;
+    -fx-padding: 8 0 2 0;
+}
+
+.register-scroll {
+    -fx-background-color: transparent;
+    -fx-background: transparent;
+    -fx-padding: 0;
+}
+
+.register-scroll .viewport {
+    -fx-background-color: transparent;
+}
+
+.register-form-grid {
+    -fx-padding: 0 2 6 2;
+}
+
+.register-message {
+    -fx-background-color: #eef4ff;
+    -fx-border-color: #bfd3f7;
+    -fx-border-radius: 10;
+    -fx-background-radius: 10;
+    -fx-padding: 10 12 10 12;
+    -fx-alignment: center-left;
+}
+
+.register-message-icon {
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
+    -fx-min-width: 24px;
+    -fx-min-height: 24px;
+    -fx-alignment: center;
+    -fx-background-radius: 999;
+    -fx-text-fill: #285b9f;
+    -fx-background-color: #d8e7ff;
+}
+
+.register-message-text {
+    -fx-text-fill: #20446f;
+    -fx-font-size: 12.5px;
+}
+
+.register-message-error {
+    -fx-background-color: #fff1f1;
+    -fx-border-color: #f1b5b5;
+}
+
+.register-message-error .register-message-icon {
+    -fx-background-color: #ffd6d6;
+    -fx-text-fill: #992f2f;
+}
+
+.register-message-error .register-message-text {
+    -fx-text-fill: #8a3030;
+}
+
+.register-message-success {
+    -fx-background-color: #effaf2;
+    -fx-border-color: #9fd2ae;
+}
+
+.register-message-success .register-message-icon {
+    -fx-background-color: #d1efd8;
+    -fx-text-fill: #1f6d3c;
+}
+
+.register-message-success .register-message-text {
+    -fx-text-fill: #205d39;
+}
+
+.register-message-info {
+    -fx-background-color: #eef4ff;
+    -fx-border-color: #bfd3f7;
+}
+
+.register-message-info .register-message-icon {
+    -fx-background-color: #d8e7ff;
+    -fx-text-fill: #285b9f;
+}
+
+.register-message-info .register-message-text {
+    -fx-text-fill: #20446f;
+}
+
+/* Legacy shared styles used across remaining pages */
 .luxury-text-field {
     -fx-background-radius: 5;
     -fx-border-color: #dcdde1;
@@ -86,31 +426,6 @@
     -fx-text-fill: #2980b9;
 }
 
-/* Registration Styles */
-.register-bg-overlay {
-    -fx-background-color: rgba(0, 0, 0, 0.6);
-}
-
-.register-card {
-    -fx-background-color: rgba(255, 255, 255, 0.95);
-    -fx-background-radius: 10;
-    -fx-effect: dropshadow(three-pass-box, rgba(0, 0, 0, 0.4), 15, 0, 0, 0);
-}
-
-.register-title {
-    -fx-font-size: 26px;
-    -fx-font-weight: bold;
-    -fx-text-fill: #2c3e50;
-}
-
-.register-section-label {
-    -fx-font-weight: bold;
-    -fx-text-fill: #34495e;
-    -fx-font-size: 14px;
-    -fx-padding: 10 0 5 0;
-}
-
-/* ScrollPane Customization */
 .scroll-pane {
     -fx-background-color: transparent;
     -fx-background: transparent;
@@ -118,4 +433,595 @@
 
 .scroll-pane .viewport {
     -fx-background-color: transparent;
+}
+
+/* Workspace Shell */
+.workspace-root {
+    -fx-background-color: #eef5ed;
+}
+
+.workspace-sidebar {
+    -fx-background-color: linear-gradient(to bottom, #0c1f1a, #123d2d 62%, #0f2b22);
+    -fx-effect: dropshadow(gaussian, rgba(7, 25, 18, 0.24), 22, 0.08, 4, 0);
+}
+
+.workspace-brand {
+    -fx-text-fill: white;
+    -fx-font-size: 24px;
+    -fx-font-weight: bold;
+}
+
+.workspace-role {
+    -fx-text-fill: #abd9c0;
+    -fx-font-size: 12px;
+    -fx-padding: 0 0 8 0;
+}
+
+.workspace-user-card {
+    -fx-background-color: rgba(255, 255, 255, 0.12);
+    -fx-background-radius: 18;
+    -fx-padding: 14;
+}
+
+.workspace-user-kicker {
+    -fx-text-fill: #b8dfca;
+    -fx-font-size: 11px;
+}
+
+.workspace-user-name {
+    -fx-text-fill: white;
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+}
+
+.workspace-section-label {
+    -fx-text-fill: #8fbca4;
+    -fx-font-size: 11px;
+    -fx-font-weight: bold;
+    -fx-padding: 12 0 0 4;
+}
+
+.workspace-nav-button {
+    -fx-background-color: transparent;
+    -fx-background-radius: 13;
+    -fx-text-fill: #e7f4ed;
+    -fx-font-weight: bold;
+    -fx-padding: 10 12 10 12;
+    -fx-cursor: hand;
+}
+
+.workspace-nav-button:hover {
+    -fx-background-color: rgba(255, 255, 255, 0.13);
+}
+
+.workspace-nav-button:pressed {
+    -fx-background-color: rgba(255, 204, 77, 0.22);
+}
+
+.workspace-logout-button {
+    -fx-background-color: rgba(255, 106, 106, 0.16);
+    -fx-border-color: rgba(255, 140, 140, 0.28);
+    -fx-border-radius: 13;
+    -fx-background-radius: 13;
+    -fx-text-fill: #ffdede;
+}
+
+.workspace-logout-button:hover {
+    -fx-background-color: rgba(255, 106, 106, 0.26);
+}
+
+/* Member Vehicle Catalog */
+.vehicle-catalog-root {
+    -fx-background-color: linear-gradient(to bottom right, #f4f7f1 0%, #eef5ed 45%, #ffffff 100%);
+}
+
+.vehicle-search-wrap {
+    -fx-background-color: linear-gradient(to bottom right, #0c1f1a, #123d2d 58%, #1f7a4c);
+    -fx-background-radius: 24;
+    -fx-padding: 28 30 30 30;
+    -fx-effect: dropshadow(gaussian, rgba(7, 25, 18, 0.30), 24, 0.10, 0, 8);
+}
+
+.vehicle-catalog-eyebrow {
+    -fx-background-color: rgba(255, 255, 255, 0.14);
+    -fx-background-radius: 999;
+    -fx-text-fill: #d7f8e5;
+    -fx-font-size: 11px;
+    -fx-font-weight: bold;
+    -fx-padding: 6 13 6 13;
+}
+
+.vehicle-catalog-title {
+    -fx-text-fill: white;
+    -fx-font-size: 34px;
+    -fx-font-weight: bold;
+}
+
+.vehicle-catalog-subtitle {
+    -fx-text-fill: #d9efe3;
+    -fx-font-size: 13px;
+}
+
+.vehicle-search-field {
+    -fx-background-color: white;
+    -fx-border-color: transparent;
+    -fx-background-radius: 14;
+    -fx-border-radius: 14;
+    -fx-padding: 13 16 13 16;
+    -fx-font-size: 14px;
+    -fx-text-fill: #14231c;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.16), 16, 0.04, 0, 5);
+}
+
+.vehicle-search-field:focused {
+    -fx-border-color: #77d69e;
+}
+
+.vehicle-filter {
+    -fx-background-color: rgba(255, 255, 255, 0.96);
+    -fx-border-color: rgba(255, 255, 255, 0.38);
+    -fx-border-radius: 12;
+    -fx-background-radius: 12;
+    -fx-padding: 3 6 3 6;
+}
+
+.vehicle-filter .list-cell {
+    -fx-text-fill: #1f382d;
+}
+
+.vehicle-primary-btn {
+    -fx-background-color: #ffcc4d;
+    -fx-text-fill: #1c2b21;
+    -fx-font-weight: bold;
+    -fx-background-radius: 14;
+    -fx-padding: 13 22 13 22;
+    -fx-cursor: hand;
+}
+
+.vehicle-primary-btn:hover {
+    -fx-background-color: #ffd86d;
+}
+
+.vehicle-secondary-btn {
+    -fx-background-color: rgba(255, 255, 255, 0.16);
+    -fx-border-color: rgba(255, 255, 255, 0.32);
+    -fx-border-radius: 12;
+    -fx-background-radius: 12;
+    -fx-text-fill: white;
+    -fx-padding: 9 15 9 15;
+    -fx-cursor: hand;
+}
+
+.vehicle-secondary-btn:hover {
+    -fx-background-color: rgba(255, 255, 255, 0.24);
+}
+
+.vehicle-result-count {
+    -fx-text-fill: #244235;
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+}
+
+.vehicle-catalog-scroll {
+    -fx-background-color: transparent;
+    -fx-background: transparent;
+    -fx-padding: 0;
+}
+
+.vehicle-catalog-scroll .viewport {
+    -fx-background-color: transparent;
+}
+
+.vehicle-card-grid {
+    -fx-padding: 4 4 20 4;
+}
+
+.vehicle-card {
+    -fx-background-color: rgba(255, 255, 255, 0.96);
+    -fx-background-radius: 20;
+    -fx-padding: 12 12 14 12;
+    -fx-effect: dropshadow(gaussian, rgba(22, 46, 35, 0.13), 22, 0.08, 0, 8);
+}
+
+.vehicle-card:hover {
+    -fx-effect: dropshadow(gaussian, rgba(22, 46, 35, 0.22), 26, 0.10, 0, 10);
+}
+
+.vehicle-card-image-wrap {
+    -fx-background-color: linear-gradient(to bottom right, #e7efe8, #d8e5db);
+    -fx-background-radius: 16;
+    -fx-min-height: 150;
+}
+
+.vehicle-card-image {
+    -fx-background-radius: 16;
+}
+
+.vehicle-card-placeholder {
+    -fx-background-color: linear-gradient(to bottom right, #dceee2, #f7fbf8);
+    -fx-background-radius: 16;
+    -fx-padding: 28 16 28 16;
+}
+
+.vehicle-placeholder-make {
+    -fx-text-fill: #224534;
+    -fx-font-size: 22px;
+    -fx-font-weight: bold;
+}
+
+.vehicle-placeholder-model {
+    -fx-text-fill: #5f786c;
+    -fx-font-size: 13px;
+}
+
+.vehicle-type-badge {
+    -fx-background-color: rgba(15, 44, 33, 0.82);
+    -fx-background-radius: 999;
+    -fx-text-fill: white;
+    -fx-font-size: 11px;
+    -fx-font-weight: bold;
+    -fx-padding: 6 10 6 10;
+}
+
+.vehicle-card-title {
+    -fx-text-fill: #14231c;
+    -fx-font-size: 18px;
+    -fx-font-weight: bold;
+}
+
+.vehicle-price {
+    -fx-background-color: #ecf8ef;
+    -fx-background-radius: 999;
+    -fx-text-fill: #1f7a4c;
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
+    -fx-padding: 6 10 6 10;
+}
+
+.vehicle-card-location {
+    -fx-text-fill: #667a70;
+    -fx-font-size: 12px;
+}
+
+.vehicle-chip {
+    -fx-background-color: #f0f4ef;
+    -fx-background-radius: 999;
+    -fx-text-fill: #435a4f;
+    -fx-font-size: 11px;
+    -fx-padding: 6 9 6 9;
+}
+
+.vehicle-card-actions {
+    -fx-alignment: center-right;
+}
+
+.vehicle-outline-btn {
+    -fx-background-color: transparent;
+    -fx-border-color: #c8d8cf;
+    -fx-border-radius: 12;
+    -fx-background-radius: 12;
+    -fx-text-fill: #294638;
+    -fx-padding: 9 13 9 13;
+    -fx-cursor: hand;
+}
+
+.vehicle-outline-btn:hover {
+    -fx-background-color: #f1f6f2;
+}
+
+.vehicle-reserve-btn {
+    -fx-background-color: #1f7a4c;
+    -fx-background-radius: 12;
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+    -fx-padding: 10 15 10 15;
+    -fx-cursor: hand;
+}
+
+.vehicle-reserve-btn:hover {
+    -fx-background-color: #26935c;
+}
+
+.vehicle-empty-state {
+    -fx-background-color: rgba(255, 255, 255, 0.88);
+    -fx-background-radius: 20;
+    -fx-padding: 40;
+}
+
+.vehicle-empty-state .vehicle-secondary-btn {
+    -fx-background-color: #1f7a4c;
+    -fx-border-color: #1f7a4c;
+    -fx-text-fill: white;
+}
+
+.vehicle-empty-title {
+    -fx-text-fill: #183125;
+    -fx-font-size: 20px;
+    -fx-font-weight: bold;
+}
+
+.vehicle-empty-body {
+    -fx-text-fill: #60776b;
+    -fx-font-size: 13px;
+}
+
+/* Vehicle Detail Page */
+.vehicle-detail-root,
+.booking-root {
+    -fx-background-color: linear-gradient(to bottom right, #f4f7f1 0%, #eef5ed 45%, #ffffff 100%);
+}
+
+.vehicle-detail-scroll,
+.booking-scroll {
+    -fx-background-color: transparent;
+    -fx-background: transparent;
+}
+
+.vehicle-detail-scroll .viewport,
+.booking-scroll .viewport {
+    -fx-background-color: transparent;
+}
+
+.vehicle-detail-content,
+.booking-page {
+    -fx-padding: 0 4 24 4;
+}
+
+.vehicle-detail-back {
+    -fx-background-color: rgba(31, 122, 76, 0.10);
+    -fx-border-color: rgba(31, 122, 76, 0.28);
+    -fx-border-radius: 999;
+    -fx-background-radius: 999;
+    -fx-text-fill: #1f6d45;
+    -fx-font-weight: bold;
+    -fx-padding: 8 14 8 14;
+    -fx-cursor: hand;
+}
+
+.vehicle-detail-back:hover {
+    -fx-background-color: rgba(31, 122, 76, 0.17);
+}
+
+.vehicle-detail-hero,
+.booking-hero {
+    -fx-background-color: linear-gradient(to bottom right, #0c1f1a, #123d2d 58%, #1f7a4c);
+    -fx-background-radius: 24;
+    -fx-padding: 24;
+    -fx-effect: dropshadow(gaussian, rgba(7, 25, 18, 0.28), 24, 0.10, 0, 8);
+}
+
+.vehicle-detail-visual,
+.booking-vehicle-visual {
+    -fx-background-color: linear-gradient(to bottom right, #dceee2, #f7fbf8);
+    -fx-background-radius: 20;
+    -fx-padding: 18;
+    -fx-min-width: 280;
+}
+
+.vehicle-detail-summary {
+    -fx-background-color: rgba(255, 255, 255, 0.12);
+    -fx-background-radius: 20;
+    -fx-padding: 20;
+}
+
+.vehicle-detail-eyebrow,
+.booking-eyebrow {
+    -fx-background-color: rgba(255, 255, 255, 0.14);
+    -fx-background-radius: 999;
+    -fx-text-fill: #d7f8e5;
+    -fx-font-size: 11px;
+    -fx-font-weight: bold;
+    -fx-padding: 6 12 6 12;
+}
+
+.vehicle-detail-title,
+.booking-title {
+    -fx-text-fill: white;
+    -fx-font-size: 32px;
+    -fx-font-weight: bold;
+}
+
+.vehicle-detail-subtitle,
+.booking-subtitle {
+    -fx-text-fill: #d9efe3;
+    -fx-font-size: 13px;
+}
+
+.vehicle-detail-price {
+    -fx-text-fill: #ffcc4d;
+    -fx-font-size: 30px;
+    -fx-font-weight: bold;
+}
+
+.vehicle-detail-fact {
+    -fx-background-color: rgba(255, 255, 255, 0.14);
+    -fx-background-radius: 14;
+    -fx-padding: 10 12 10 12;
+}
+
+.vehicle-detail-fact-title {
+    -fx-text-fill: #cce7d9;
+    -fx-font-size: 11px;
+}
+
+.vehicle-detail-fact-value {
+    -fx-text-fill: white;
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
+}
+
+.vehicle-detail-reserve,
+.booking-submit {
+    -fx-background-color: #ffcc4d;
+    -fx-background-radius: 14;
+    -fx-text-fill: #1c2b21;
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+    -fx-padding: 13 18 13 18;
+    -fx-cursor: hand;
+}
+
+.vehicle-detail-reserve:hover,
+.booking-submit:hover {
+    -fx-background-color: #ffd86d;
+}
+
+.vehicle-detail-card,
+.booking-card,
+.booking-summary-card {
+    -fx-background-color: rgba(255, 255, 255, 0.96);
+    -fx-background-radius: 20;
+    -fx-padding: 20;
+    -fx-effect: dropshadow(gaussian, rgba(22, 46, 35, 0.13), 22, 0.08, 0, 8);
+}
+
+.vehicle-detail-card-title,
+.booking-summary-title,
+.booking-section-title {
+    -fx-text-fill: #14231c;
+    -fx-font-size: 18px;
+    -fx-font-weight: bold;
+}
+
+.vehicle-detail-spec-label,
+.booking-field-label {
+    -fx-text-fill: #6a7d73;
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
+}
+
+.vehicle-detail-spec-value,
+.booking-summary-value {
+    -fx-text-fill: #1c3327;
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
+}
+
+.vehicle-detail-term-marker {
+    -fx-background-color: #1f7a4c;
+    -fx-background-radius: 999;
+    -fx-min-width: 9;
+    -fx-min-height: 9;
+    -fx-max-width: 9;
+    -fx-max-height: 9;
+    -fx-translate-y: 5;
+}
+
+.vehicle-detail-term-title {
+    -fx-text-fill: #1c3327;
+    -fx-font-weight: bold;
+}
+
+.vehicle-detail-term-value {
+    -fx-text-fill: #667a70;
+    -fx-font-size: 12px;
+}
+
+.vehicle-detail-placeholder-make,
+.booking-placeholder-make {
+    -fx-text-fill: #224534;
+    -fx-font-size: 30px;
+    -fx-font-weight: bold;
+}
+
+.vehicle-detail-placeholder-model,
+.booking-placeholder-model {
+    -fx-text-fill: #5f786c;
+    -fx-font-size: 15px;
+}
+
+/* Booking Page */
+.booking-card {
+    -fx-min-width: 420;
+}
+
+.booking-grid {
+    -fx-padding: 4 0 8 0;
+}
+
+.booking-input {
+    -fx-background-color: #f7faf7;
+    -fx-border-color: #cddbd1;
+    -fx-border-radius: 12;
+    -fx-background-radius: 12;
+    -fx-padding: 5 8 5 8;
+}
+
+.booking-input:focused {
+    -fx-border-color: #1f7a4c;
+}
+
+.booking-selected-car {
+    -fx-background-color: #ecf8ef;
+    -fx-background-radius: 14;
+    -fx-text-fill: #1f7a4c;
+    -fx-font-weight: bold;
+    -fx-padding: 10 12 10 12;
+}
+
+.booking-addon {
+    -fx-background-color: #f0f4ef;
+    -fx-background-radius: 999;
+    -fx-text-fill: #31483d;
+    -fx-padding: 9 12 9 12;
+}
+
+.booking-summary-muted {
+    -fx-text-fill: #6a7d73;
+    -fx-font-size: 12px;
+}
+
+.booking-estimate {
+    -fx-text-fill: #1f7a4c;
+    -fx-font-size: 24px;
+    -fx-font-weight: bold;
+}
+
+.booking-receipt-lines {
+    -fx-background-color: #f7faf7;
+    -fx-background-radius: 16;
+    -fx-padding: 12;
+}
+
+.booking-receipt-line {
+    -fx-padding: 6 0 6 0;
+}
+
+.booking-receipt-label {
+    -fx-text-fill: #1c3327;
+    -fx-font-size: 12.5px;
+    -fx-font-weight: bold;
+}
+
+.booking-receipt-detail {
+    -fx-text-fill: #7a8b83;
+    -fx-font-size: 11px;
+}
+
+.booking-receipt-amount {
+    -fx-text-fill: #1f7a4c;
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
+}
+
+.booking-receipt-note {
+    -fx-text-fill: #7a8b83;
+    -fx-font-size: 12px;
+    -fx-font-style: italic;
+}
+
+.booking-status {
+    -fx-font-size: 12.5px;
+    -fx-padding: 10 12 10 12;
+    -fx-background-radius: 12;
+}
+
+.booking-status-success {
+    -fx-background-color: #effaf2;
+    -fx-text-fill: #1f6d3c;
+}
+
+.booking-status-error {
+    -fx-background-color: #fff1f1;
+    -fx-text-fill: #8a3030;
 }

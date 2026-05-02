@@ -19,18 +19,23 @@ import com.cs210.project.repositories.VehicleLogRepository;
 import com.cs210.project.constants.Enums.VehicleLogType;
 import javafx.collections.FXCollections;
 import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
 import javafx.scene.control.cell.PropertyValueFactory;
-import javafx.scene.layout.GridPane;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.VBox;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
+import javafx.scene.layout.*;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
+import javafx.util.StringConverter;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
+import java.util.stream.Collectors;
 
 public class VehiclesView extends VBox {
     private final VehicleRepository vehicleRepo = new VehicleRepository();
@@ -39,6 +44,15 @@ public class VehiclesView extends VBox {
     private final VehicleLogRepository logRepo = new VehicleLogRepository();
     private final ParkingStallRepository stallRepo = new ParkingStallRepository();
     private final TableView<Vehicle> table = new TableView<>();
+    private final TilePane vehicleCards = new TilePane();
+    private final Label resultCountLabel = new Label();
+    private TextField memberSearchField;
+    private ComboBox<VehicleType> memberTypeFilter;
+    private ComboBox<CarType> memberClassFilter;
+    private ComboBox<TransmissionType> memberTransmissionFilter;
+    private ComboBox<FuelType> memberFuelFilter;
+    private ComboBox<Location> memberLocationFilter;
+    private List<Vehicle> memberCatalogVehicles = new ArrayList<>();
     private final Account currentUser;
     private java.util.function.Consumer<javafx.scene.Node> onViewChange;
 
@@ -54,13 +68,297 @@ public class VehiclesView extends VBox {
     }
 
     private void setupUI() {
+        if (Session.isMember()) {
+            setupMemberCatalogUI();
+        } else {
+            setupManagementUI();
+        }
+    }
+
+    private void setupMemberCatalogUI() {
+        getStyleClass().add("vehicle-catalog-root");
+        setPadding(new Insets(22));
+        setSpacing(18);
+
+        Label eyebrow = new Label("AVAILABLE AUTOMOBILES");
+        eyebrow.getStyleClass().add("vehicle-catalog-eyebrow");
+        Label title = new Label("Find your next rental");
+        title.getStyleClass().add("vehicle-catalog-title");
+        Label subtitle = new Label("Search by vehicle name, then refine by class, location, transmission, or fuel.");
+        subtitle.getStyleClass().add("vehicle-catalog-subtitle");
+
+        VBox searchWrap = new VBox(10);
+        searchWrap.setAlignment(Pos.CENTER);
+        searchWrap.getStyleClass().add("vehicle-search-wrap");
+
+        HBox searchRow = new HBox(10);
+        searchRow.setAlignment(Pos.CENTER);
+        memberSearchField = new TextField();
+        memberSearchField.setPromptText("Search Chevrolet, Malibu, Spark...");
+        memberSearchField.getStyleClass().add("vehicle-search-field");
+        memberSearchField.setMaxWidth(520);
+        HBox.setHgrow(memberSearchField, Priority.ALWAYS);
+
+        Button searchBtn = new Button("Search");
+        searchBtn.getStyleClass().add("vehicle-primary-btn");
+        searchBtn.setOnAction(e -> applyMemberFilters());
+        searchRow.getChildren().addAll(memberSearchField, searchBtn);
+
+        FlowPane filters = new FlowPane(10, 10);
+        filters.setAlignment(Pos.CENTER);
+
+        memberTypeFilter = new ComboBox<>(FXCollections.observableArrayList(VehicleType.values()));
+        memberTypeFilter.setPromptText("Body type");
+        memberClassFilter = new ComboBox<>(FXCollections.observableArrayList(CarType.values()));
+        memberClassFilter.setPromptText("Class");
+        memberTransmissionFilter = new ComboBox<>(FXCollections.observableArrayList(TransmissionType.values()));
+        memberTransmissionFilter.setPromptText("Transmission");
+        memberFuelFilter = new ComboBox<>(FXCollections.observableArrayList(FuelType.values()));
+        memberFuelFilter.setPromptText("Fuel");
+        memberLocationFilter = new ComboBox<>(FXCollections.observableArrayList(locationRepo.findAll()));
+        memberLocationFilter.setPromptText("Location");
+
+        configureMemberFilterLabels();
+
+        for (ComboBox<?> filter : List.of(memberTypeFilter, memberClassFilter, memberTransmissionFilter, memberFuelFilter, memberLocationFilter)) {
+            filter.getStyleClass().add("vehicle-filter");
+            filter.setPrefWidth(142);
+        }
+
+        Button clearBtn = new Button("Clear");
+        clearBtn.getStyleClass().add("vehicle-secondary-btn");
+        clearBtn.setOnAction(e -> {
+            memberSearchField.clear();
+            memberTypeFilter.setValue(null);
+            memberClassFilter.setValue(null);
+            memberTransmissionFilter.setValue(null);
+            memberFuelFilter.setValue(null);
+            memberLocationFilter.setValue(null);
+            applyMemberFilters();
+        });
+
+        filters.getChildren().addAll(memberTypeFilter, memberClassFilter, memberTransmissionFilter, memberFuelFilter, memberLocationFilter, clearBtn);
+        searchWrap.getChildren().addAll(eyebrow, title, subtitle, searchRow, filters);
+
+        HBox resultHeader = new HBox(resultCountLabel);
+        resultHeader.setAlignment(Pos.CENTER_LEFT);
+        resultCountLabel.getStyleClass().add("vehicle-result-count");
+
+        vehicleCards.getStyleClass().add("vehicle-card-grid");
+        vehicleCards.setHgap(18);
+        vehicleCards.setVgap(18);
+        vehicleCards.setPrefColumns(3);
+        vehicleCards.setTileAlignment(Pos.TOP_LEFT);
+
+        ScrollPane scrollPane = new ScrollPane(vehicleCards);
+        scrollPane.getStyleClass().add("vehicle-catalog-scroll");
+        scrollPane.setFitToWidth(true);
+        scrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+        VBox.setVgrow(scrollPane, Priority.ALWAYS);
+
+        memberSearchField.setOnAction(e -> applyMemberFilters());
+        memberSearchField.textProperty().addListener((obs, oldValue, newValue) -> applyMemberFilters());
+        for (ComboBox<?> filter : List.of(memberTypeFilter, memberClassFilter, memberTransmissionFilter, memberFuelFilter, memberLocationFilter)) {
+            filter.setOnAction(e -> applyMemberFilters());
+        }
+
+        getChildren().addAll(searchWrap, resultHeader, scrollPane);
+    }
+
+    private void configureMemberFilterLabels() {
+        memberTypeFilter.setConverter(new StringConverter<>() {
+            @Override public String toString(VehicleType value) { return value == null ? "" : value.getLabel(); }
+            @Override public VehicleType fromString(String value) { return null; }
+        });
+        memberClassFilter.setConverter(new StringConverter<>() {
+            @Override public String toString(CarType value) { return value == null ? "" : value.getLabel(); }
+            @Override public CarType fromString(String value) { return null; }
+        });
+        memberTransmissionFilter.setConverter(new StringConverter<>() {
+            @Override public String toString(TransmissionType value) { return value == null ? "" : value.getLabel(); }
+            @Override public TransmissionType fromString(String value) { return null; }
+        });
+        memberFuelFilter.setConverter(new StringConverter<>() {
+            @Override public String toString(FuelType value) { return value == null ? "" : value.getLabel(); }
+            @Override public FuelType fromString(String value) { return null; }
+        });
+    }
+
+    private void applyMemberFilters() {
+        List<Vehicle> vehicles = memberCatalogVehicles.stream()
+                .filter(this::matchesMemberFilters)
+                .sorted((first, second) -> Double.compare(first.getPricePerDay(), second.getPricePerDay()))
+                .collect(Collectors.toList());
+
+        vehicleCards.getChildren().setAll(
+                vehicles.stream()
+                        .map(this::createVehicleCard)
+                        .collect(Collectors.toList()));
+
+        if (vehicles.isEmpty()) {
+            vehicleCards.getChildren().add(createEmptyCatalogState());
+        }
+
+        resultCountLabel.setText(vehicles.size() + (vehicles.size() == 1 ? " automobile available" : " automobiles available"));
+    }
+
+    private boolean isMemberVisibleVehicle(Vehicle vehicle) {
+        return vehicle != null
+                && vehicle.isActive()
+                && vehicle.getStatus() == VehicleStatus.AVAILABLE;
+    }
+
+    private boolean matchesMemberFilters(Vehicle vehicle) {
+        String query = memberSearchField.getText() == null
+                ? ""
+                : memberSearchField.getText().trim().toLowerCase(Locale.ROOT);
+        String name = ((vehicle.getMake() == null ? "" : vehicle.getMake()) + " "
+                + (vehicle.getModel() == null ? "" : vehicle.getModel())).toLowerCase(Locale.ROOT);
+
+        if (!query.isBlank() && !name.contains(query)) {
+            return false;
+        }
+        if (memberTypeFilter.getValue() != null && vehicle.getVehicleType() != memberTypeFilter.getValue()) {
+            return false;
+        }
+        if (memberClassFilter.getValue() != null && vehicle.getCarType() != memberClassFilter.getValue()) {
+            return false;
+        }
+        if (memberTransmissionFilter.getValue() != null && vehicle.getTransmissionType() != memberTransmissionFilter.getValue()) {
+            return false;
+        }
+        if (memberFuelFilter.getValue() != null && vehicle.getFuelType() != memberFuelFilter.getValue()) {
+            return false;
+        }
+        return memberLocationFilter.getValue() == null || vehicle.getLocationId() == memberLocationFilter.getValue().getId();
+    }
+
+    private VBox createVehicleCard(Vehicle vehicle) {
+        VBox card = new VBox(12);
+        card.getStyleClass().add("vehicle-card");
+        card.setPrefWidth(285);
+        card.setMinWidth(260);
+
+        StackPane visual = createVehicleVisual(vehicle);
+
+        Label typeBadge = new Label(vehicle.getVehicleType() != null ? vehicle.getVehicleType().getLabel() : "Vehicle");
+        typeBadge.getStyleClass().add("vehicle-type-badge");
+        StackPane.setAlignment(typeBadge, Pos.TOP_LEFT);
+        StackPane.setMargin(typeBadge, new Insets(12));
+        visual.getChildren().add(typeBadge);
+
+        HBox titleRow = new HBox(10);
+        titleRow.setAlignment(Pos.TOP_LEFT);
+        Label name = new Label(vehicle.getMake() + " " + vehicle.getModel());
+        name.getStyleClass().add("vehicle-card-title");
+        name.setWrapText(true);
+        HBox.setHgrow(name, Priority.ALWAYS);
+        Label price = new Label(String.format("$%.0f/day", vehicle.getPricePerDay()));
+        price.getStyleClass().add("vehicle-price");
+        titleRow.getChildren().addAll(name, price);
+
+        Label location = new Label(vehicle.getLocationName() != null ? vehicle.getLocationName() : "Location available");
+        location.getStyleClass().add("vehicle-card-location");
+
+        HBox meta = new HBox(8);
+        meta.getStyleClass().add("vehicle-meta");
+        meta.getChildren().addAll(
+                createMetaChip(vehicle.getPassengerCapacity() + " seats"),
+                createMetaChip(vehicle.getTransmissionType() != null ? vehicle.getTransmissionType().getLabel() : "Auto"),
+                createMetaChip(vehicle.getFuelType() != null ? vehicle.getFuelType().getLabel() : "Fuel"));
+
+        HBox actions = new HBox(10);
+        actions.getStyleClass().add("vehicle-card-actions");
+        Button detailsBtn = new Button("Details");
+        detailsBtn.getStyleClass().add("vehicle-outline-btn");
+        detailsBtn.setOnAction(e -> {
+            if (onViewChange != null) {
+                onViewChange.accept(new VehicleDetailView(currentUser, vehicle, onViewChange));
+            } else {
+                showDetailsDialog(vehicle);
+            }
+        });
+        Button reserveBtn = new Button("Reserve now");
+        reserveBtn.getStyleClass().add("vehicle-reserve-btn");
+        reserveBtn.setOnAction(e -> {
+            if (onViewChange != null) {
+                onViewChange.accept(new ReservationView(currentUser, vehicle, onViewChange));
+            }
+        });
+        actions.getChildren().addAll(detailsBtn, reserveBtn);
+
+        card.getChildren().addAll(visual, titleRow, location, meta, actions);
+        return card;
+    }
+
+    private StackPane createVehicleVisual(Vehicle vehicle) {
+        StackPane visual = new StackPane();
+        visual.getStyleClass().add("vehicle-card-image-wrap");
+        visual.setPrefHeight(150);
+
+        if (vehicle.getImagePath() != null && !vehicle.getImagePath().isBlank()) {
+            try {
+                ImageView imageView = new ImageView(new Image(vehicle.getImagePath(), 290, 150, true, true, true));
+                imageView.getStyleClass().add("vehicle-card-image");
+                imageView.setFitWidth(290);
+                imageView.setFitHeight(150);
+                imageView.setPreserveRatio(true);
+                visual.getChildren().add(imageView);
+                return visual;
+            } catch (Exception ignored) {
+                // Fall through to the branded placeholder when a saved image path is invalid.
+            }
+        }
+
+        VBox placeholder = new VBox(4);
+        placeholder.setAlignment(Pos.CENTER);
+        placeholder.getStyleClass().add("vehicle-card-placeholder");
+        Label make = new Label(vehicle.getMake() != null && !vehicle.getMake().isBlank() ? vehicle.getMake() : "Rental");
+        make.getStyleClass().add("vehicle-placeholder-make");
+        Label model = new Label(vehicle.getModel() != null && !vehicle.getModel().isBlank() ? vehicle.getModel() : "Automobile");
+        model.getStyleClass().add("vehicle-placeholder-model");
+        placeholder.getChildren().addAll(make, model);
+        visual.getChildren().add(placeholder);
+        return visual;
+    }
+
+    private Label createMetaChip(String text) {
+        Label chip = new Label(text);
+        chip.getStyleClass().add("vehicle-chip");
+        return chip;
+    }
+
+    private VBox createEmptyCatalogState() {
+        VBox empty = new VBox(8);
+        empty.getStyleClass().add("vehicle-empty-state");
+        empty.setAlignment(Pos.CENTER);
+        empty.setPrefWidth(720);
+        Label title = new Label("No cars match these filters");
+        title.getStyleClass().add("vehicle-empty-title");
+        Label body = new Label("Try clearing one filter or searching a different model name.");
+        body.getStyleClass().add("vehicle-empty-body");
+        Button clear = new Button("Clear filters");
+        clear.getStyleClass().add("vehicle-secondary-btn");
+        clear.setOnAction(e -> {
+            memberSearchField.clear();
+            memberTypeFilter.setValue(null);
+            memberClassFilter.setValue(null);
+            memberTransmissionFilter.setValue(null);
+            memberFuelFilter.setValue(null);
+            memberLocationFilter.setValue(null);
+            applyMemberFilters();
+        });
+        empty.getChildren().addAll(title, body, clear);
+        return empty;
+    }
+
+    private void setupManagementUI() {
         setPadding(new Insets(20));
         setSpacing(15);
 
         Label title = new Label("Vehicle Inventory");
         title.setStyle("-fx-font-size: 20px; -fx-font-weight: bold;");
 
-        // Filters organized in a grid to avoid clipping
         GridPane filterGrid = new GridPane();
         filterGrid.setHgap(10);
         filterGrid.setVgap(10);
@@ -626,6 +924,13 @@ public class VehiclesView extends VBox {
     }
 
     private void loadData() {
-        table.setItems(FXCollections.observableArrayList(vehicleRepo.findAll()));
+        if (Session.isMember()) {
+            memberCatalogVehicles = vehicleRepo.findAll().stream()
+                    .filter(this::isMemberVisibleVehicle)
+                    .collect(Collectors.toList());
+            applyMemberFilters();
+        } else {
+            table.setItems(FXCollections.observableArrayList(vehicleRepo.findAll()));
+        }
     }
 }
