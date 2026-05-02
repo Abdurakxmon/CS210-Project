@@ -10,15 +10,7 @@ import java.sql.SQLException;
  */
 public class DatabaseConnection {
 
-    public static final String HOST = "localhost";
-    public static final int PORT = 3306;
-    public static final String DATABASE_NAME = "car_rental_system";
-    private static final String URL =
-            "jdbc:mysql://" + HOST + ":" + PORT + "/" + DATABASE_NAME
-                    + "?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC";
-    private static final String SERVER_URL =
-            "jdbc:mysql://" + HOST + ":" + PORT
-                    + "/?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC";
+    private static final String URL = "jdbc:mysql://mysql-8.0/car_rental_system?useSSL=false&serverTimezone=UTC";
     private static final String USER = "root";
     private static final String PASSWORD = "";
 
@@ -41,7 +33,4 @@ public class DatabaseConnection {
         return DriverManager.getConnection(URL, USER, PASSWORD);
     }
 
-    public static Connection getServerConnection() throws SQLException {
-        return DriverManager.getConnection(SERVER_URL, USER, PASSWORD);
-    }
 }

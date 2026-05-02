@@ -1,7 +1,6 @@
 package com.cs210.project;
 
 import com.cs210.project.models.Account;
-import com.cs210.project.config.DatabaseInitializer;
 import com.cs210.project.ui.frontend.AuthView;
 import com.cs210.project.ui.frontend.RegistrationView;
 import com.cs210.project.ui.WorkspaceView;
@@ -30,7 +29,6 @@ public class MainApp extends Application {
     }
 
     public static void main(String[] args) {
-        DatabaseInitializer.initializeFromConfig();
         launch();
     }
 
