@@ -447,11 +447,11 @@
 
 .workspace-sidebar-scroll {
     -fx-background: transparent;
-    -fx-background-color: transparent;
+    -fx-background-color: linear-gradient(to bottom, #0c1f1a, #123d2d 62%, #0f2b22);
 }
 
 .workspace-sidebar-scroll .viewport {
-    -fx-background-color: transparent;
+    -fx-background-color: linear-gradient(to bottom, #0c1f1a, #123d2d 62%, #0f2b22);
 }
 
 .workspace-center-host {

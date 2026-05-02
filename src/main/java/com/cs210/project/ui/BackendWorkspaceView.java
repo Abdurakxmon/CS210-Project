@@ -78,7 +78,12 @@ public class BackendWorkspaceView extends BorderPane {
         finishSidebar(sidebar);
         ScrollPane sidebarScroll = new ScrollPane(sidebar);
         sidebarScroll.setFitToWidth(true);
+        sidebarScroll.setFitToHeight(true);
+        sidebarScroll.setPrefWidth(250);
+        sidebarScroll.setMinWidth(250);
+        sidebarScroll.setMaxWidth(250);
         sidebarScroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+        sidebarScroll.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
         sidebarScroll.getStyleClass().add("workspace-sidebar-scroll");
         setLeft(sidebarScroll);
         centerHost.getStyleClass().add("workspace-center-host");
