@@ -204,7 +204,7 @@ public class Enums {
     }
 
     public enum FuelType {
-        PETROL(1, "Petrol"), DIESEL(2, "Diesel"), HYBRID(3, "Hybrid"), ELECTRIC(4, "Electric");
+        PETROL(1, "Benzin"), DIESEL(2, "Propane"), HYBRID(3, "Hybrid"), ELECTRIC(4, "Electric");
         private final int value;
         private final String label;
         FuelType(int v, String l) { this.value = v; this.label = l; }
