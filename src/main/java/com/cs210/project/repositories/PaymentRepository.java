@@ -13,7 +13,11 @@ import java.util.List;
 public class PaymentRepository {
 
     public void processPayment(int billId, BigDecimal amount, PaymentType type) {
-        String sql = "INSERT INTO payments (bill_id, creation_date, amount, status, payment_type) VALUES (?, ?, ?, ?, ?)";
+        processPayment(billId, amount, type, null);
+    }
+
+    public void processPayment(int billId, BigDecimal amount, PaymentType type, Integer processedByAccountId) {
+        String sql = "INSERT INTO payments (bill_id, creation_date, amount, status, payment_type, processed_by_account_id) VALUES (?, ?, ?, ?, ?, ?)";
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             pstmt.setInt(1, billId);
@@ -21,6 +25,7 @@ public class PaymentRepository {
             pstmt.setBigDecimal(3, amount);
             pstmt.setInt(4, PaymentStatus.COMPLETED.getValue());
             pstmt.setInt(5, type.getValue());
+            if (processedByAccountId != null) pstmt.setInt(6, processedByAccountId); else pstmt.setNull(6, Types.INTEGER);
             pstmt.executeUpdate();
             
             int paymentId;

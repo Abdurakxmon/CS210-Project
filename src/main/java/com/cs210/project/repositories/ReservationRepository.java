@@ -43,7 +43,8 @@ public class ReservationRepository {
     }
 
     public List<VehicleReservation> findAll() {
-        String sql = "SELECT r.*, v.make, v.model, v.license_number, v.image_path, pm.name as member_name, ps.name as staff_name, " +
+        String sql = "SELECT r.*, v.make, v.model, v.license_number, v.image_path, pm.name as member_name, " +
+                     "m.driver_license_number as member_driver_license_number, ps.name as staff_name, " +
                      "pl.name as pickup_location_name, rl.name as return_location_name, b.total_amount, " +
                      "COALESCE((SELECT SUM(p.amount) FROM payments p WHERE p.bill_id = b.id AND p.status IN (3, 9)), 0) as paid_amount " +
                      "FROM vehicle_reservations r " +
@@ -61,7 +62,8 @@ public class ReservationRepository {
     }
 
     public VehicleReservation findByNumber(String resNum) {
-        String sql = "SELECT r.*, v.make, v.model, v.license_number, v.image_path, pm.name as member_name, ps.name as staff_name, " +
+        String sql = "SELECT r.*, v.make, v.model, v.license_number, v.image_path, pm.name as member_name, " +
+                     "m.driver_license_number as member_driver_license_number, ps.name as staff_name, " +
                      "pl.name as pickup_location_name, rl.name as return_location_name, b.total_amount, " +
                      "COALESCE((SELECT SUM(p.amount) FROM payments p WHERE p.bill_id = b.id AND p.status IN (3, 9)), 0) as paid_amount " +
                      "FROM vehicle_reservations r " +
@@ -172,6 +174,7 @@ public class ReservationRepository {
                     
                     // New fields
                     try { r.setMemberName(rs.getString("member_name")); } catch (Exception e) {}
+                    try { r.setMemberDriverLicenseNumber(rs.getString("member_driver_license_number")); } catch (Exception e) {}
                     try { r.setStaffName(rs.getString("staff_name")); } catch (Exception e) {}
                     try { r.setPickupLocationName(rs.getString("pickup_location_name")); } catch (Exception e) {}
                     try { r.setReturnLocationName(rs.getString("return_location_name")); } catch (Exception e) {}

@@ -15,10 +15,14 @@ public class PaymentService {
     private final NotificationRepository notifyRepo = new NotificationRepository();
 
     public void payBill(int reservationId, BigDecimal amount, PaymentType type) throws Exception {
+        payBill(reservationId, amount, type, null);
+    }
+
+    public void payBill(int reservationId, BigDecimal amount, PaymentType type, Integer processedByAccountId) throws Exception {
         Bill bill = billRepo.findByReservationId(reservationId);
         if (bill == null) throw new Exception("Bill not found.");
 
-        payRepo.processPayment(bill.getId(), amount, type);
+        payRepo.processPayment(bill.getId(), amount, type, processedByAccountId);
         notifyRepo.create(reservationId, NotificationType.PAYMENT_CONFIRMATION, "Payment of $" + amount + " received via " + type.getLabel());
     }
 

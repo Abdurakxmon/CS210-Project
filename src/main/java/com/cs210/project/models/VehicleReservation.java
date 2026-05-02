@@ -22,6 +22,7 @@ public class VehicleReservation {
     private String vehiclePlate;
     private String vehicleImagePath;
     private String memberName;
+    private String memberDriverLicenseNumber;
     private String staffName;
     private String pickupLocationName;
     private String returnLocationName;
@@ -33,6 +34,8 @@ public class VehicleReservation {
     // Getters and Setters
     public String getMemberName() { return memberName; }
     public void setMemberName(String memberName) { this.memberName = memberName; }
+    public String getMemberDriverLicenseNumber() { return memberDriverLicenseNumber; }
+    public void setMemberDriverLicenseNumber(String memberDriverLicenseNumber) { this.memberDriverLicenseNumber = memberDriverLicenseNumber; }
     public String getStaffName() { return staffName; }
     public void setStaffName(String staffName) { this.staffName = staffName; }
     public double getAmount() { return amount; }

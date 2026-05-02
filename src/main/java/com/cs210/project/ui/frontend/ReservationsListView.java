@@ -1,6 +1,7 @@
 package com.cs210.project.ui.frontend;
 
 import com.cs210.project.config.Session;
+import com.cs210.project.constants.Enums.PaymentType;
 import com.cs210.project.constants.Enums.ReservationStatus;
 import com.cs210.project.models.*;
 import com.cs210.project.repositories.*;
@@ -11,7 +12,6 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
-import javafx.scene.control.TextInputDialog;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
@@ -80,9 +80,11 @@ public class ReservationsListView extends VBox {
         hero.getStyleClass().add("backend-inventory-hero");
         Label eyebrow = new Label("OPERATIONS");
         eyebrow.getStyleClass().add("backend-inventory-eyebrow");
-        Label title = new Label("All Reservations");
+        Label title = new Label(Session.isWorker() ? "Returned Cars" : "All Reservations");
         title.getStyleClass().add("backend-inventory-title");
-        Label subtitle = new Label("Search reservations, monitor pickup status, and handle cancellation or return workflows.");
+        Label subtitle = new Label(Session.isWorker()
+                ? "Inspect returned vehicles, record mileage and condition, then assign the vehicle to a stall."
+                : "Search reservations, monitor pickup status, and handle cancellation or return workflows.");
         subtitle.getStyleClass().add("backend-inventory-subtitle");
         backendSummaryLabel.getStyleClass().add("backend-inventory-summary");
         hero.getChildren().addAll(eyebrow, title, subtitle, backendSummaryLabel);
@@ -146,7 +148,7 @@ public class ReservationsListView extends VBox {
         copyBtn.getStyleClass().add("backend-secondary-btn");
         actions.getChildren().add(copyBtn);
 
-        if (!Session.isMember()) {
+        if (!Session.isMember() && !Session.isWorker()) {
             Button addBtn = new Button("Add Reservation");
             addBtn.getStyleClass().add("backend-primary-btn");
             addBtn.setOnAction(e -> showReservationDialog(null));
@@ -180,22 +182,7 @@ public class ReservationsListView extends VBox {
             actions.getChildren().addAll(addBtn, editBtn, deleteBtn);
         }
 
-        Button cancelBtn = new Button("Cancel Selected");
-        cancelBtn.getStyleClass().add("backend-danger-btn");
-        cancelBtn.setOnAction(e -> {
-            VehicleReservation selected = table.getSelectionModel().getSelectedItem();
-            if (selected != null) {
-                try {
-                    resService.cancelReservation(selected.getId());
-                    loadData();
-                } catch (Exception ex) {
-                    Alert alert = new Alert(Alert.AlertType.ERROR, ex.getMessage());
-                    alert.show();
-                }
-            }
-        });
-
-        Button returnBtn = new Button("Return Selected");
+        Button returnBtn = new Button(Session.isWorker() ? "Complete Inspection" : "Return Selected");
         returnBtn.getStyleClass().add("backend-primary-btn");
         returnBtn.setOnAction(e -> {
             VehicleReservation selected = table.getSelectionModel().getSelectedItem();
@@ -216,13 +203,11 @@ public class ReservationsListView extends VBox {
                     }
                 });
             } else {
-                // Worker inspection flow
-                TextInputDialog mileageDialog = new TextInputDialog("0");
-                mileageDialog.setTitle("Return Vehicle");
-                mileageDialog.setHeaderText("Enter Current Mileage and Condition");
-                mileageDialog.setContentText("Current Mileage:");
-                
-                mileageDialog.showAndWait().ifPresent(mileage -> showWorkerInspectionDialog(selected, mileage));
+                if (selected.getStatus() != ReservationStatus.WAITING_FOR_INSPECTION) {
+                    new Alert(Alert.AlertType.INFORMATION, "This vehicle has already been inspected.").show();
+                    return;
+                }
+                showWorkerInspectionDialog(selected);
             }
         });
 
@@ -233,7 +218,25 @@ public class ReservationsListView extends VBox {
             if (selected != null) showDetailsDialog(selected);
         });
 
-        actions.getChildren().addAll(cancelBtn, returnBtn, detailsBtn);
+        if (!Session.isWorker()) {
+            Button cancelBtn = new Button("Cancel Selected");
+            cancelBtn.getStyleClass().add("backend-danger-btn");
+            cancelBtn.setOnAction(e -> {
+                VehicleReservation selected = table.getSelectionModel().getSelectedItem();
+                if (selected != null) {
+                    try {
+                        resService.cancelReservation(selected.getId());
+                        loadData();
+                    } catch (Exception ex) {
+                        Alert alert = new Alert(Alert.AlertType.ERROR, ex.getMessage());
+                        alert.show();
+                    }
+                }
+            });
+            actions.getChildren().add(cancelBtn);
+        }
+
+        actions.getChildren().addAll(returnBtn, detailsBtn);
         getChildren().addAll(hero, feedbackLabel, filterGrid, actions, table);
     }
 
@@ -496,20 +499,37 @@ public class ReservationsListView extends VBox {
         grid.add(valueNode, 1, row);
     }
 
-    private void showWorkerInspectionDialog(VehicleReservation reservation, String mileageValue) {
+    private void showWorkerInspectionDialog(VehicleReservation reservation) {
         Stage dialog = new Stage();
         dialog.initModality(Modality.APPLICATION_MODAL);
         dialog.setTitle("Return Inspection");
 
-        GridPane grid = new GridPane();
-        grid.setPadding(new Insets(20));
-        grid.setHgap(10);
-        grid.setVgap(10);
+        VBox root = new VBox(16);
+        root.setPadding(new Insets(22));
+        root.setMinWidth(680);
+        root.getStyleClass().add("reservation-modal");
 
-        TextField mileageField = new TextField(mileageValue);
+        VBox hero = new VBox(5);
+        hero.getStyleClass().add("reservation-modal-hero");
+        Label title = new Label("Return Inspection");
+        title.getStyleClass().add("reservation-modal-title");
+        Label subtitle = new Label(reservation.getReservationNumber() + " | " +
+                reservation.getVehicleMake() + " " + reservation.getVehicleModel() + " | " +
+                reservation.getVehiclePlate());
+        subtitle.getStyleClass().add("reservation-modal-code");
+        subtitle.setWrapText(true);
+        hero.getChildren().addAll(title, subtitle);
+
+        GridPane grid = new GridPane();
+        grid.getStyleClass().add("reservation-modal-grid");
+        grid.setHgap(16);
+        grid.setVgap(12);
+
+        TextField mileageField = new TextField("0");
         TextField fuelLevelField = new TextField("100");
         TextArea damageNotes = new TextArea();
-        damageNotes.setPrefRowCount(3);
+        damageNotes.setPromptText("Describe damage or write Good");
+        damageNotes.setPrefRowCount(4);
         TextField damageFeeField = new TextField("0.00");
         TextField fuelFeeField = new TextField("0.00");
         CheckBox cleanedCheck = new CheckBox("Cleaned");
@@ -517,31 +537,53 @@ public class ReservationsListView extends VBox {
         CheckBox maintenanceCheck = new CheckBox("Maintenance Required");
         ComboBox<ParkingStall> stallCombo = new ComboBox<>(FXCollections.observableArrayList(
                 stallRepo.findAvailableStalls(reservation.getReturnLocationId())));
+        stallCombo.setPromptText("Select return stall");
         TextArea notesArea = new TextArea();
+        notesArea.setPromptText("Worker notes");
         notesArea.setPrefRowCount(3);
 
+        mileageField.getStyleClass().add("backend-text-input");
+        fuelLevelField.getStyleClass().add("backend-text-input");
+        damageNotes.getStyleClass().add("backend-text-input");
+        damageFeeField.getStyleClass().add("backend-text-input");
+        fuelFeeField.getStyleClass().add("backend-text-input");
+        stallCombo.getStyleClass().add("backend-input");
+        notesArea.getStyleClass().add("backend-text-input");
+
         int row = 0;
-        grid.add(new Label("Mileage:"), 0, row); grid.add(mileageField, 1, row++);
-        grid.add(new Label("Fuel Level %:"), 0, row); grid.add(fuelLevelField, 1, row++);
-        grid.add(new Label("Damage Notes:"), 0, row); grid.add(damageNotes, 1, row++);
-        grid.add(new Label("Damage Fee:"), 0, row); grid.add(damageFeeField, 1, row++);
-        grid.add(new Label("Fuel Fee:"), 0, row); grid.add(fuelFeeField, 1, row++);
+        addInspectionRow(grid, "Mileage", mileageField, row++);
+        addInspectionRow(grid, "Fuel Level %", fuelLevelField, row++);
+        addInspectionRow(grid, "Condition / Damage", damageNotes, row++);
+        addInspectionRow(grid, "Damage Fee", damageFeeField, row++);
+        addInspectionRow(grid, "Fuel Fee", fuelFeeField, row++);
         grid.add(cleanedCheck, 1, row++);
         grid.add(maintenanceCheck, 1, row++);
-        grid.add(new Label("Parking Stall:"), 0, row); grid.add(stallCombo, 1, row++);
-        grid.add(new Label("Notes:"), 0, row); grid.add(notesArea, 1, row++);
+        addInspectionRow(grid, "Parking Stall", stallCombo, row++);
+        addInspectionRow(grid, "Notes", notesArea, row++);
+
+        if (stallCombo.getItems().isEmpty()) {
+            Label noStalls = new Label("No free stalls at this return location. The vehicle can still be completed without a stall.");
+            noStalls.setWrapText(true);
+            noStalls.setStyle("-fx-text-fill: #b45309;");
+            grid.add(noStalls, 1, row++);
+        }
 
         Button saveBtn = new Button("Complete Inspection");
+        saveBtn.getStyleClass().add("backend-primary-btn");
         saveBtn.setOnAction(e -> {
             try {
+                int mileage = Integer.parseInt(mileageField.getText().trim());
+                int fuelLevel = Integer.parseInt(fuelLevelField.getText().trim());
+                if (mileage < 0) throw new Exception("Mileage cannot be negative.");
+                if (fuelLevel < 0 || fuelLevel > 100) throw new Exception("Fuel level must be between 0 and 100.");
                 rentalService.returnVehicle(
                         reservation.getReservationNumber(),
                         Session.getAccount().getId(),
-                        Integer.parseInt(mileageField.getText()),
-                        Integer.parseInt(fuelLevelField.getText()),
+                        mileage,
+                        fuelLevel,
                         damageNotes.getText(),
-                        new BigDecimal(damageFeeField.getText()),
-                        new BigDecimal(fuelFeeField.getText()),
+                        new BigDecimal(damageFeeField.getText().trim()),
+                        new BigDecimal(fuelFeeField.getText().trim()),
                         cleanedCheck.isSelected(),
                         maintenanceCheck.isSelected(),
                         stallCombo.getValue() != null ? stallCombo.getValue().getId() : null,
@@ -553,10 +595,20 @@ public class ReservationsListView extends VBox {
             }
         });
 
-        VBox root = new VBox(10, grid, saveBtn);
-        root.setPadding(new Insets(10));
+        HBox footer = new HBox(saveBtn);
+        footer.setAlignment(Pos.CENTER_RIGHT);
+        root.getChildren().addAll(hero, grid, footer);
         dialog.setScene(new Scene(root));
         dialog.showAndWait();
+    }
+
+    private void addInspectionRow(GridPane grid, String label, Control control, int row) {
+        Label labelNode = new Label(label);
+        labelNode.getStyleClass().add("reservation-modal-label");
+        control.setMaxWidth(Double.MAX_VALUE);
+        GridPane.setHgrow(control, Priority.ALWAYS);
+        grid.add(labelNode, 0, row);
+        grid.add(control, 1, row);
     }
 
     private void loadData() {
@@ -568,9 +620,10 @@ public class ReservationsListView extends VBox {
         } else {
             data = resService.getAllReservations();
             if (Session.isWorker()) {
-                // Filter for cars waiting for inspection
+                // Keep newly reviewed cars visible so the worker sees the result after completing inspection.
                 data = data.stream()
-                    .filter(res -> res.getStatus() == ReservationStatus.WAITING_FOR_INSPECTION)
+                    .filter(res -> res.getStatus() == ReservationStatus.WAITING_FOR_INSPECTION
+                            || res.getStatus() == ReservationStatus.COMPLETED)
                     .toList();
             }
             backendReservations = data;
@@ -665,6 +718,12 @@ public class ReservationsListView extends VBox {
             card.getStyleClass().add("reservation-card-highlight");
         }
 
+        Bill bill = billRepo.findByReservationId(reservation.getId());
+        BigDecimal total = bill != null ? bill.getTotalAmount() : BigDecimal.valueOf(reservation.getAmount());
+        BigDecimal paid = bill != null ? paymentRepo.getSuccessfulPaidAmount(bill.getId()) : BigDecimal.valueOf(reservation.getPaidAmount());
+        BigDecimal balance = total.subtract(paid);
+        if (balance.compareTo(BigDecimal.ZERO) < 0) balance = BigDecimal.ZERO;
+
         HBox header = new HBox(14);
         header.setAlignment(Pos.TOP_LEFT);
         StackPane visual = createReservationVisual(reservation, 150, 88);
@@ -686,9 +745,16 @@ public class ReservationsListView extends VBox {
                 createDetailBlock("Pickup", formatDate(reservation.getPickupDate())),
                 createDetailBlock("Return", formatDate(reservation.getDueDate())),
                 createDetailBlock("Location", reservation.getPickupLocationName() != null ? reservation.getPickupLocationName() : "Assigned"),
-                createDetailBlock("Total", String.format("$%.2f", reservation.getAmount())),
-                createDetailBlock("Paid", String.format("$%.2f", reservation.getPaidAmount()))
+                createDetailBlock("Total", String.format("$%.2f", total)),
+                createDetailBlock("Paid", String.format("$%.2f", paid)),
+                createDetailBlock("Balance", String.format("$%.2f", balance))
         );
+
+        Label feeNotice = new Label("Inspection fees were added. Please pay the remaining balance.");
+        feeNotice.setWrapText(true);
+        feeNotice.setStyle("-fx-background-color: #fff7ed; -fx-text-fill: #9a3412; -fx-padding: 10 12; -fx-background-radius: 8;");
+        feeNotice.setVisible(balance.compareTo(BigDecimal.ZERO) > 0 && reservation.getStatus() == ReservationStatus.COMPLETED);
+        feeNotice.setManaged(feeNotice.isVisible());
 
         HBox actions = new HBox(10);
         actions.setAlignment(Pos.CENTER_RIGHT);
@@ -706,9 +772,15 @@ public class ReservationsListView extends VBox {
         returnBtn.getStyleClass().add("reservations-primary-btn");
         returnBtn.setDisable(reservation.getStatus() != ReservationStatus.PENDING);
         returnBtn.setOnAction(e -> initiateMemberReturn(reservation));
-        actions.getChildren().addAll(copyBtn, detailsBtn, cancelBtn, returnBtn);
+        Button payBalanceBtn = new Button("Pay Balance");
+        payBalanceBtn.getStyleClass().add("reservations-primary-btn");
+        payBalanceBtn.setDisable(balance.compareTo(BigDecimal.ZERO) <= 0);
+        payBalanceBtn.setVisible(balance.compareTo(BigDecimal.ZERO) > 0);
+        payBalanceBtn.setManaged(payBalanceBtn.isVisible());
+        payBalanceBtn.setOnAction(e -> showMemberPaymentDialog(reservation));
+        actions.getChildren().addAll(copyBtn, detailsBtn, cancelBtn, returnBtn, payBalanceBtn);
 
-        card.getChildren().addAll(header, details, actions);
+        card.getChildren().addAll(header, details, feeNotice, actions);
         return card;
     }
 
@@ -754,6 +826,73 @@ public class ReservationsListView extends VBox {
         valueNode.setWrapText(true);
         block.getChildren().addAll(labelNode, valueNode);
         return block;
+    }
+
+    private void showMemberPaymentDialog(VehicleReservation reservation) {
+        Bill bill = billRepo.findByReservationId(reservation.getId());
+        if (bill == null) {
+            new Alert(Alert.AlertType.ERROR, "No bill found for this reservation.").show();
+            return;
+        }
+
+        BigDecimal paid = paymentRepo.getSuccessfulPaidAmount(bill.getId());
+        BigDecimal remaining = bill.getTotalAmount().subtract(paid);
+        if (remaining.compareTo(BigDecimal.ZERO) <= 0) {
+            new Alert(Alert.AlertType.INFORMATION, "This reservation is already fully paid.").show();
+            loadData();
+            return;
+        }
+
+        Dialog<ButtonType> dialog = new Dialog<>();
+        dialog.setTitle("Pay Balance");
+        dialog.setHeaderText("Pay remaining balance for " + reservation.getReservationNumber());
+
+        VBox layout = new VBox(14);
+        layout.setPadding(new Insets(20));
+        layout.setMinWidth(430);
+
+        Label vehicle = new Label(reservation.getVehicleMake() + " " + reservation.getVehicleModel());
+        vehicle.getStyleClass().add("reservation-modal-title");
+        Label balance = new Label(String.format("Total: $%.2f | Paid: $%.2f | Balance: $%.2f",
+                bill.getTotalAmount(), paid, remaining));
+        balance.setWrapText(true);
+
+        TextField amountField = new TextField(remaining.toString());
+        amountField.getStyleClass().add("backend-text-input");
+        ComboBox<PaymentType> typeCombo = new ComboBox<>(FXCollections.observableArrayList(PaymentType.values()));
+        typeCombo.getStyleClass().add("backend-input");
+        typeCombo.setValue(PaymentType.CREDIT_CARD);
+
+        GridPane grid = new GridPane();
+        grid.setHgap(12);
+        grid.setVgap(10);
+        grid.add(new Label("Amount"), 0, 0);
+        grid.add(amountField, 1, 0);
+        grid.add(new Label("Payment Type"), 0, 1);
+        grid.add(typeCombo, 1, 1);
+
+        layout.getChildren().addAll(vehicle, balance, grid);
+        dialog.getDialogPane().setContent(layout);
+        dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
+
+        dialog.showAndWait().ifPresent(response -> {
+            if (response == ButtonType.OK) {
+                try {
+                    BigDecimal amount = new BigDecimal(amountField.getText().trim());
+                    if (amount.compareTo(BigDecimal.ZERO) <= 0) {
+                        throw new Exception("Payment amount must be greater than $0.00.");
+                    }
+                    if (amount.compareTo(remaining) > 0) {
+                        throw new Exception(String.format("Payment cannot exceed remaining balance of $%.2f.", remaining));
+                    }
+                    paymentRepo.processPayment(bill.getId(), amount, typeCombo.getValue(), Session.getAccount().getId());
+                    new Alert(Alert.AlertType.INFORMATION, "Payment processed successfully.").show();
+                    loadData();
+                } catch (Exception ex) {
+                    new Alert(Alert.AlertType.ERROR, "Payment failed: " + ex.getMessage()).show();
+                }
+            }
+        });
     }
 
     private String formatDate(LocalDateTime date) {

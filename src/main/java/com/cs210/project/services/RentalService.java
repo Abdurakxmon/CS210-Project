@@ -26,31 +26,9 @@ public class RentalService {
         eligibilityService.validateCustomerEligibility(res.getMemberId());
         eligibilityService.validateNoFailedPaymentForReservation(res.getId());
 
-        // 1. Check/Create Bill
-        Bill bill = billRepo.findByReservationId(res.getId());
-        if (bill == null) {
-            bill = new Bill();
-            bill.setReservationId(res.getId());
-            billRepo.create(bill);
-            
-            // Calculate base price
-            com.cs210.project.models.Vehicle v = vehicleRepo.findById(res.getVehicleId());
-            long days = java.time.temporal.ChronoUnit.DAYS.between(res.getPickupDate().toLocalDate(), res.getDueDate().toLocalDate());
-            if (days < 1) days = 1;
-            BigDecimal baseAmount = BigDecimal.valueOf(v.getPricePerDay() * days);
-            
-            billRepo.addItem(bill.getId(), BillItemType.BASE_CHARGE, baseAmount, "Base Rental Charge (" + days + " days)");
-            billRepo.updateTotal(bill.getId());
-        }
+        ensureBillFullyPaid(res);
 
-        // 2. Check Payment Status
-        BigDecimal paid = paymentRepo.getSuccessfulPaidAmount(bill.getId());
-            
-        if (paid.compareTo(bill.getTotalAmount()) < 0) {
-            throw new Exception("Payment required. Remaining balance: $" + bill.getTotalAmount().subtract(paid));
-        }
-
-        // 3. Update Statuses ONLY AFTER PAYMENT IS VERIFIED
+        // Update statuses only after payment is verified.
         vehicleRepo.updateStatus(res.getVehicleId(), VehicleStatus.LOANED);
         resRepo.updateStatus(res.getId(), ReservationStatus.PENDING); // Mark as active
 
@@ -153,6 +131,41 @@ public class RentalService {
         return res;
     }
 
+    public Bill prepareBillForPayment(String reservationNumber) throws Exception {
+        VehicleReservation res = resRepo.findByNumber(reservationNumber);
+        if (res == null) throw new Exception("Reservation not found.");
+        return ensureBillExists(res);
+    }
+
+    private Bill ensureBillFullyPaid(VehicleReservation res) throws Exception {
+        Bill bill = ensureBillExists(res);
+
+        BigDecimal paid = paymentRepo.getSuccessfulPaidAmount(bill.getId());
+        if (paid.compareTo(bill.getTotalAmount()) < 0) {
+            throw new Exception("Payment required before pickup. Remaining balance: $" + bill.getTotalAmount().subtract(paid));
+        }
+        return bill;
+    }
+
+    private Bill ensureBillExists(VehicleReservation res) throws Exception {
+        Bill bill = billRepo.findByReservationId(res.getId());
+        if (bill == null) {
+            bill = new Bill();
+            bill.setReservationId(res.getId());
+            billRepo.create(bill);
+
+            com.cs210.project.models.Vehicle v = vehicleRepo.findById(res.getVehicleId());
+            long days = java.time.temporal.ChronoUnit.DAYS.between(res.getPickupDate().toLocalDate(), res.getDueDate().toLocalDate());
+            if (days < 1) days = 1;
+            BigDecimal baseAmount = BigDecimal.valueOf(v.getPricePerDay() * days);
+
+            billRepo.addItem(bill.getId(), BillItemType.BASE_CHARGE, baseAmount, "Base Rental Charge (" + days + " days)");
+            billRepo.updateTotal(bill.getId());
+            bill = billRepo.findByReservationId(res.getId());
+        }
+        return bill;
+    }
+
     public void processPickup(String vehicleBarcode, String memberLicense) throws Exception {
         // 1. Scan the barcode of the vehicle
         com.cs210.project.models.Vehicle v = vehicleRepo.findByBarcode(vehicleBarcode);
@@ -174,6 +187,9 @@ public class RentalService {
         // 3. Check if the customer has a valid reservation for the vehicle
         VehicleReservation res = resRepo.findPendingByVehicleAndMember(v.getId(), memberId);
         if (res == null) throw new Exception("No valid CONFIRMED reservation found for this vehicle and member.");
+        eligibilityService.validateCustomerEligibility(res.getMemberId());
+        eligibilityService.validateNoFailedPaymentForReservation(res.getId());
+        ensureBillFullyPaid(res);
 
         // 4. Update status of the vehicle to 'Loaned'
         vehicleRepo.updateStatus(v.getId(), VehicleStatus.LOANED);

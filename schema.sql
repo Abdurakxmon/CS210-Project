@@ -234,7 +234,9 @@ CREATE TABLE IF NOT EXISTS payments (
     amount DECIMAL(10,2) NOT NULL,
     status INT NOT NULL,
     payment_type INT NOT NULL,
-    FOREIGN KEY (bill_id) REFERENCES bills(id) ON DELETE CASCADE
+    processed_by_account_id INT NULL,
+    FOREIGN KEY (bill_id) REFERENCES bills(id) ON DELETE CASCADE,
+    FOREIGN KEY (processed_by_account_id) REFERENCES accounts(id)
 ) ENGINE=InnoDB;
 
 -- 20. credit_card_transactions

@@ -106,7 +106,9 @@ public class VehicleRepository {
     }
 
     public void updateStatus(int vehicleId, com.cs210.project.constants.VehicleStatus status) {
-        String sql = "UPDATE vehicles SET status = ? WHERE id = ?";
+        String sql = status == VehicleStatus.LOANED
+                ? "UPDATE vehicles SET status = ?, parking_stall_id = NULL WHERE id = ?"
+                : "UPDATE vehicles SET status = ? WHERE id = ?";
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setInt(1, status.getValue());

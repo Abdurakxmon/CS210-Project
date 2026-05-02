@@ -7,6 +7,7 @@ import com.cs210.project.ui.backend.LocationManagementView;
 import com.cs210.project.ui.backend.ParkingStallManagementView;
 import com.cs210.project.ui.backend.PickupReturnView;
 import com.cs210.project.ui.backend.RentalSystemManagementView;
+import com.cs210.project.ui.backend.SuperAdminDashboardView;
 import com.cs210.project.ui.frontend.ReservationsListView;
 import com.cs210.project.ui.frontend.VehiclesView;
 import javafx.geometry.Insets;
@@ -33,6 +34,12 @@ public class BackendWorkspaceView extends BorderPane {
 
         VBox sidebar = createSidebarBase(roleText());
         sidebar.getChildren().add(createUserCard());
+
+        if (Session.isSuperAdmin()) {
+            Button dashboardBtn = createSidebarBtn("Dashboard");
+            dashboardBtn.setOnAction(e -> setCenter(new SuperAdminDashboardView()));
+            sidebar.getChildren().addAll(createSectionLabel("Overview"), dashboardBtn);
+        }
 
         Button inventoryBtn = createSidebarBtn("Vehicle Inventory");
         inventoryBtn.setOnAction(e -> setCenter(new VehiclesView(user, this::setCenter)));
@@ -67,7 +74,7 @@ public class BackendWorkspaceView extends BorderPane {
 
         finishSidebar(sidebar);
         setLeft(sidebar);
-        setCenter(new VehiclesView(user, this::setCenter));
+        setCenter(Session.isSuperAdmin() ? new SuperAdminDashboardView() : new VehiclesView(user, this::setCenter));
     }
 
     private String roleText() {

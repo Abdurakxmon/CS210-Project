@@ -7,6 +7,18 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class ParkingStallRepository {
+    private ParkingStall mapStall(ResultSet rs) throws SQLException {
+        ParkingStall s = new ParkingStall();
+        s.setId(rs.getInt("id"));
+        s.setLocationId(rs.getInt("location_id"));
+        s.setStallNumber(rs.getString("stall_number"));
+        s.setLocationIdentifier(rs.getString("location_identifier"));
+        try { s.setLocationName(rs.getString("loc_name")); } catch (Exception e) {}
+        try { s.setAssignedVehicleName(rs.getString("vehicle_name")); } catch (Exception e) {}
+        try { s.setAssignedVehiclePlate(rs.getString("license_number")); } catch (Exception e) {}
+        return s;
+    }
+
     public List<ParkingStall> findAvailableStalls(int locationId) {
         List<ParkingStall> stalls = new ArrayList<>();
         // Find stalls at this location that are NOT currently assigned to an active vehicle
@@ -18,12 +30,7 @@ public class ParkingStallRepository {
             pstmt.setInt(1, locationId);
             try (ResultSet rs = pstmt.executeQuery()) {
                 while (rs.next()) {
-                    ParkingStall s = new ParkingStall();
-                    s.setId(rs.getInt("id"));
-                    s.setLocationId(rs.getInt("location_id"));
-                    s.setStallNumber(rs.getString("stall_number"));
-                    s.setLocationIdentifier(rs.getString("location_identifier"));
-                    stalls.add(s);
+                    stalls.add(mapStall(rs));
                 }
             }
         } catch (SQLException e) { e.printStackTrace(); }
@@ -38,12 +45,7 @@ public class ParkingStallRepository {
             pstmt.setInt(1, locationId);
             try (ResultSet rs = pstmt.executeQuery()) {
                 while (rs.next()) {
-                    ParkingStall s = new ParkingStall();
-                    s.setId(rs.getInt("id"));
-                    s.setLocationId(rs.getInt("location_id"));
-                    s.setStallNumber(rs.getString("stall_number"));
-                    s.setLocationIdentifier(rs.getString("location_identifier"));
-                    stalls.add(s);
+                    stalls.add(mapStall(rs));
                 }
             }
         } catch (SQLException e) { e.printStackTrace(); }
@@ -57,12 +59,7 @@ public class ParkingStallRepository {
             pstmt.setInt(1, id);
             try (ResultSet rs = pstmt.executeQuery()) {
                 if (rs.next()) {
-                    ParkingStall s = new ParkingStall();
-                    s.setId(rs.getInt("id"));
-                    s.setLocationId(rs.getInt("location_id"));
-                    s.setStallNumber(rs.getString("stall_number"));
-                    s.setLocationIdentifier(rs.getString("location_identifier"));
-                    return s;
+                    return mapStall(rs);
                 }
             }
         } catch (SQLException e) { e.printStackTrace(); }
@@ -106,17 +103,17 @@ public class ParkingStallRepository {
 
     public List<ParkingStall> findAll() {
         List<ParkingStall> stalls = new ArrayList<>();
-        String sql = "SELECT s.*, l.name as loc_name FROM parking_stalls s JOIN locations l ON s.location_id = l.id";
+        String sql = "SELECT s.*, l.name as loc_name, " +
+                     "CONCAT(v.make, ' ', v.model) as vehicle_name, v.license_number " +
+                     "FROM parking_stalls s " +
+                     "JOIN locations l ON s.location_id = l.id " +
+                     "LEFT JOIN vehicles v ON s.id = v.parking_stall_id AND v.is_active = TRUE " +
+                     "ORDER BY l.name, s.stall_number";
         try (Connection conn = DatabaseConnection.getConnection();
              Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
             while (rs.next()) {
-                ParkingStall s = new ParkingStall();
-                s.setId(rs.getInt("id"));
-                s.setLocationId(rs.getInt("location_id"));
-                s.setStallNumber(rs.getString("stall_number"));
-                s.setLocationIdentifier(rs.getString("location_identifier"));
-                stalls.add(s);
+                stalls.add(mapStall(rs));
             }
         } catch (SQLException e) { e.printStackTrace(); }
         return stalls;

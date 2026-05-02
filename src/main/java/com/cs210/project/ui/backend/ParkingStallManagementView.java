@@ -11,6 +11,7 @@ import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
@@ -24,31 +25,53 @@ public class ParkingStallManagementView extends VBox {
 
     public ParkingStallManagementView() {
         setPadding(new Insets(20));
-        setSpacing(20);
+        setSpacing(16);
+        getStyleClass().add("backend-inventory-root");
 
+        VBox hero = new VBox(6);
+        hero.getStyleClass().add("backend-inventory-hero");
+        Label eyebrow = new Label("Fleet Operations");
+        eyebrow.getStyleClass().add("backend-inventory-eyebrow");
         Label title = new Label("Parking Stall Management");
-        title.setStyle("-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: #2c3e50;");
+        title.getStyleClass().add("backend-inventory-title");
+        Label subtitle = new Label("Track stall locations, zones, and the vehicle currently occupying each space.");
+        subtitle.getStyleClass().add("backend-inventory-subtitle");
+        hero.getChildren().addAll(eyebrow, title, subtitle);
 
         // Actions
         HBox actions = new HBox(10);
+        actions.getStyleClass().add("backend-action-bar");
         Button addBtn = new Button("Add Stall");
-        addBtn.setStyle("-fx-background-color: #2ecc71; -fx-text-fill: white;");
+        addBtn.getStyleClass().add("backend-primary-btn");
         addBtn.setOnAction(e -> showStallDialog(null));
 
         Button editBtn = new Button("Edit Stall");
-        editBtn.setStyle("-fx-background-color: #3498db; -fx-text-fill: white;");
+        editBtn.getStyleClass().add("backend-secondary-btn");
         editBtn.setOnAction(e -> {
             ParkingStall selected = table.getSelectionModel().getSelectedItem();
             if (selected != null) showStallDialog(selected);
+            else new Alert(Alert.AlertType.INFORMATION, "Select a stall to edit.").show();
         });
 
         Button deleteBtn = new Button("Delete Stall");
-        deleteBtn.setStyle("-fx-background-color: #e74c3c; -fx-text-fill: white;");
+        deleteBtn.getStyleClass().add("backend-danger-btn");
         deleteBtn.setOnAction(e -> {
             ParkingStall selected = table.getSelectionModel().getSelectedItem();
             if (selected != null) {
-                stallRepo.delete(selected.getId());
-                loadData();
+                if (!"Available".equals(selected.getOccupancyStatus())) {
+                    new Alert(Alert.AlertType.ERROR, "This stall is occupied. Move or return the vehicle before deleting it.").show();
+                    return;
+                }
+                Alert confirm = new Alert(Alert.AlertType.CONFIRMATION, "Delete stall " + selected.getStallNumber() + "?",
+                        ButtonType.YES, ButtonType.NO);
+                confirm.showAndWait().ifPresent(response -> {
+                    if (response == ButtonType.YES) {
+                        stallRepo.delete(selected.getId());
+                        loadData();
+                    }
+                });
+            } else {
+                new Alert(Alert.AlertType.INFORMATION, "Select a stall to delete.").show();
             }
         });
 
@@ -58,13 +81,25 @@ public class ParkingStallManagementView extends VBox {
         TableColumn<ParkingStall, String> numberCol = new TableColumn<>("Stall Number");
         numberCol.setCellValueFactory(new PropertyValueFactory<>("stallNumber"));
 
+        TableColumn<ParkingStall, String> locationCol = new TableColumn<>("Location");
+        locationCol.setCellValueFactory(new PropertyValueFactory<>("locationName"));
+
         TableColumn<ParkingStall, String> idenCol = new TableColumn<>("Identifier/Zone");
         idenCol.setCellValueFactory(new PropertyValueFactory<>("locationIdentifier"));
 
-        table.getColumns().addAll(numberCol, idenCol);
-        table.setPlaceholder(new Label("No parking stalls configured."));
+        TableColumn<ParkingStall, String> statusCol = new TableColumn<>("Status");
+        statusCol.setCellValueFactory(new PropertyValueFactory<>("occupancyStatus"));
 
-        getChildren().addAll(title, actions, table);
+        TableColumn<ParkingStall, String> vehicleCol = new TableColumn<>("Assigned Vehicle");
+        vehicleCol.setCellValueFactory(new PropertyValueFactory<>("assignedVehicleDisplay"));
+
+        table.getColumns().addAll(numberCol, locationCol, idenCol, statusCol, vehicleCol);
+        table.setPlaceholder(new Label("No parking stalls configured."));
+        table.getStyleClass().add("backend-table");
+        table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
+        VBox.setVgrow(table, Priority.ALWAYS);
+
+        getChildren().addAll(hero, actions, table);
         loadData();
     }
 
@@ -84,6 +119,9 @@ public class ParkingStallManagementView extends VBox {
         TextField numberField = new TextField(stall != null ? stall.getStallNumber() : "");
         TextField idenField = new TextField(stall != null ? stall.getLocationIdentifier() : "");
         ComboBox<Location> locBox = new ComboBox<>(FXCollections.observableArrayList(locationRepo.findAll()));
+        numberField.getStyleClass().add("backend-text-input");
+        idenField.getStyleClass().add("backend-text-input");
+        locBox.getStyleClass().add("backend-input");
         
         if (stall != null) {
             locBox.getItems().stream().filter(l -> l.getId() == stall.getLocationId()).findFirst().ifPresent(locBox::setValue);
@@ -94,9 +132,12 @@ public class ParkingStallManagementView extends VBox {
         grid.add(new Label("Zone/Identifier:"), 0, 2); grid.add(idenField, 1, 2);
 
         Button saveBtn = new Button("Save");
-        saveBtn.setStyle("-fx-background-color: #2ecc71; -fx-text-fill: white;");
+        saveBtn.getStyleClass().add("backend-primary-btn");
         saveBtn.setOnAction(e -> {
-            if (locBox.getValue() == null || numberField.getText().isEmpty()) return;
+            if (locBox.getValue() == null || numberField.getText().isBlank()) {
+                new Alert(Alert.AlertType.ERROR, "Location and stall number are required.").show();
+                return;
+            }
             
             ParkingStall s = stall == null ? new ParkingStall() : stall;
             s.setLocationId(locBox.getValue().getId());

@@ -636,16 +636,42 @@ public class VehiclesView extends VBox {
 
         ComboBox<Location> locBox = new ComboBox<>(FXCollections.observableArrayList(locationRepo.findAll()));
         ComboBox<ParkingStall> stallBox = new ComboBox<>();
+        stallBox.setPromptText("No stall assigned");
+        stallBox.setConverter(new StringConverter<>() {
+            @Override
+            public String toString(ParkingStall stall) {
+                return stall == null ? "No stall assigned" : stall.toString();
+            }
+
+            @Override
+            public ParkingStall fromString(String string) {
+                return null;
+            }
+        });
+        Label stallHelp = new Label("Choose a location to see open stalls.");
+        stallHelp.setStyle("-fx-text-fill: #64748b; -fx-font-size: 11px;");
+        Button clearStallBtn = new Button("Clear");
+        clearStallBtn.getStyleClass().add("backend-secondary-btn");
+        clearStallBtn.setOnAction(e -> stallBox.setValue(null));
 
         locBox.setOnAction(e -> {
             if (locBox.getValue() != null) {
-                stallBox.setItems(
-                        FXCollections.observableArrayList(stallRepo.findAvailableStalls(locBox.getValue().getId())));
+                List<ParkingStall> availableStalls = new ArrayList<>(stallRepo.findAvailableStalls(locBox.getValue().getId()));
                 if (vehicle != null && vehicle.getParkingStallId() != null) {
                     ParkingStall currentStall = stallRepo.findById(vehicle.getParkingStallId());
-                    if (currentStall != null)
-                        stallBox.getItems().add(currentStall);
-                    stallBox.setValue(currentStall);
+                    if (currentStall != null && currentStall.getLocationId() == locBox.getValue().getId()
+                            && availableStalls.stream().noneMatch(s -> s.getId() == currentStall.getId())) {
+                        availableStalls.add(0, currentStall);
+                    }
+                    stallBox.setValue(currentStall != null && currentStall.getLocationId() == locBox.getValue().getId() ? currentStall : null);
+                } else {
+                    stallBox.setValue(null);
+                }
+                stallBox.setItems(FXCollections.observableArrayList(availableStalls));
+                if (availableStalls.isEmpty()) {
+                    stallHelp.setText("No free stalls at this location. You can save the vehicle without a stall.");
+                } else {
+                    stallHelp.setText(availableStalls.size() + " free stall(s) available at this location.");
                 }
             }
         });
@@ -684,7 +710,8 @@ public class VehiclesView extends VBox {
         grid.add(new Label("Location:"), 0, 5);
         grid.add(locBox, 1, 5);
         grid.add(new Label("Parking Stall:"), 2, 5);
-        grid.add(stallBox, 3, 5);
+        VBox stallPicker = new VBox(4, new HBox(8, stallBox, clearStallBtn), stallHelp);
+        grid.add(stallPicker, 3, 5);
         grid.add(new Label("Price/Day:"), 0, 6);
         grid.add(priceField, 1, 6);
         grid.add(sunroofCheck, 2, 6);
@@ -726,6 +753,8 @@ public class VehiclesView extends VBox {
                     v.setLocationId(locBox.getValue().getId());
                 if (stallBox.getValue() != null)
                     v.setParkingStallId(stallBox.getValue().getId());
+                else
+                    v.setParkingStallId(null);
                 v.setPricePerDay(Double.parseDouble(priceField.getText()));
 
                 if (vehicle == null) {

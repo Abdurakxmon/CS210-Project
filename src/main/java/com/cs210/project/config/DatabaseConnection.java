@@ -13,7 +13,7 @@ import java.sql.Statement;
  */
 public class DatabaseConnection {
 
-    private static final String URL = "jdbc:mysql://localhost:3306/car_rental_system?useSSL=false&serverTimezone=UTC";
+    private static final String URL = "jdbc:mysql://mysql-8.0/car_rental_system?useSSL=false&serverTimezone=UTC";
     private static final String USER = "root";
     private static final String PASSWORD = "";
     private static final Object SCHEMA_LOCK = new Object();
