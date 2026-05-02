@@ -296,6 +296,7 @@ CREATE TABLE `notifications` (
   `notification_type` int NOT NULL,
   `created_on` timestamp NOT NULL,
   `content` text NOT NULL,
+  `is_read` tinyint(1) NOT NULL DEFAULT '0',
   `address` varchar(255) DEFAULT NULL,
   `email` varchar(150) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -304,15 +305,15 @@ CREATE TABLE `notifications` (
 -- Dumping data for table `notifications`
 --
 
-INSERT INTO `notifications` (`id`, `reservation_id`, `notification_type`, `created_on`, `content`, `address`, `email`) VALUES
-(1, 1, 3, '2026-05-01 15:57:35', 'Reservation RES-20260501-0001-737 pending for Chevrolet Nexia 3', NULL, NULL),
-(2, 2, 3, '2026-05-01 18:21:08', 'Reservation RES-20260501-0002-776 pending for Chevrolet Cobalt', NULL, NULL),
-(3, 3, 3, '2026-05-01 18:52:17', 'Reservation RES-20260501-000003 confirmed for Chevrolet Tahoe', NULL, NULL),
-(4, 3, 3, '2026-05-01 18:52:48', 'Vehicle picked up. Your rental has started!', NULL, NULL),
-(5, 4, 3, '2026-05-01 18:54:04', 'Reservation RES-20260501-000004 confirmed for Chevrolet Captiva', NULL, NULL),
-(6, 4, 3, '2026-05-01 18:54:37', 'Vehicle picked up. Your rental has started!', NULL, NULL),
-(7, 4, 3, '2026-05-01 18:54:58', 'A fine of $30 has been added to your bill for damage/other issues.', NULL, NULL),
-(8, 4, 3, '2026-05-01 18:54:58', 'Vehicle returned successfully. Mileage updated to 1111. Thank you!', NULL, NULL);
+INSERT INTO `notifications` (`id`, `reservation_id`, `notification_type`, `created_on`, `content`, `is_read`, `address`, `email`) VALUES
+(1, 1, 3, '2026-05-01 15:57:35', 'Reservation RES-20260501-0001-737 pending for Chevrolet Nexia 3', 0, NULL, NULL),
+(2, 2, 3, '2026-05-01 18:21:08', 'Reservation RES-20260501-0002-776 pending for Chevrolet Cobalt', 0, NULL, NULL),
+(3, 3, 3, '2026-05-01 18:52:17', 'Reservation RES-20260501-000003 confirmed for Chevrolet Tahoe', 0, NULL, NULL),
+(4, 3, 3, '2026-05-01 18:52:48', 'Vehicle picked up. Your rental has started!', 0, NULL, NULL),
+(5, 4, 3, '2026-05-01 18:54:04', 'Reservation RES-20260501-000004 confirmed for Chevrolet Captiva', 0, NULL, NULL),
+(6, 4, 3, '2026-05-01 18:54:37', 'Vehicle picked up. Your rental has started!', 0, NULL, NULL),
+(7, 4, 3, '2026-05-01 18:54:58', 'A fine of $30 has been added to your bill for damage/other issues.', 0, NULL, NULL),
+(8, 4, 3, '2026-05-01 18:54:58', 'Vehicle returned successfully. Mileage updated to 1111. Thank you!', 0, NULL, NULL);
 
 -- --------------------------------------------------------
 

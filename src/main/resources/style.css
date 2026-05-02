@@ -463,6 +463,14 @@
     -fx-padding: 14;
 }
 
+.workspace-user-card-clickable {
+    -fx-cursor: hand;
+}
+
+.workspace-user-card-clickable:hover {
+    -fx-background-color: rgba(255, 255, 255, 0.18);
+}
+
 .workspace-user-kicker {
     -fx-text-fill: #b8dfca;
     -fx-font-size: 11px;
@@ -508,6 +516,18 @@
 
 .workspace-logout-button:hover {
     -fx-background-color: rgba(255, 106, 106, 0.26);
+}
+
+.workspace-notification-badge {
+    -fx-background-color: #ffcc4d;
+    -fx-background-radius: 999;
+    -fx-text-fill: #1c2b21;
+    -fx-font-size: 11px;
+    -fx-font-weight: bold;
+    -fx-min-width: 24;
+    -fx-min-height: 24;
+    -fx-alignment: center;
+    -fx-padding: 2 7 2 7;
 }
 
 /* Member Vehicle Catalog */
@@ -743,6 +763,150 @@
 .vehicle-empty-body {
     -fx-text-fill: #60776b;
     -fx-font-size: 13px;
+}
+
+/* Backend Vehicle Inventory */
+.backend-inventory-root {
+    -fx-background-color: linear-gradient(to bottom right, #f4f7f1 0%, #eef5ed 45%, #ffffff 100%);
+}
+
+.backend-inventory-hero {
+    -fx-background-color: linear-gradient(to bottom right, #0c1f1a, #123d2d 58%, #1f7a4c);
+    -fx-background-radius: 24;
+    -fx-padding: 24 28 26 28;
+    -fx-effect: dropshadow(gaussian, rgba(7, 25, 18, 0.28), 24, 0.10, 0, 8);
+}
+
+.backend-inventory-eyebrow {
+    -fx-background-color: rgba(255, 255, 255, 0.14);
+    -fx-background-radius: 999;
+    -fx-text-fill: #d7f8e5;
+    -fx-font-size: 11px;
+    -fx-font-weight: bold;
+    -fx-padding: 6 12 6 12;
+}
+
+.backend-inventory-title {
+    -fx-text-fill: white;
+    -fx-font-size: 32px;
+    -fx-font-weight: bold;
+}
+
+.backend-inventory-subtitle {
+    -fx-text-fill: #d9efe3;
+    -fx-font-size: 13px;
+}
+
+.backend-inventory-summary {
+    -fx-text-fill: #ffcc4d;
+    -fx-font-size: 15px;
+    -fx-font-weight: bold;
+    -fx-padding: 8 0 0 0;
+}
+
+.backend-filter-panel,
+.backend-action-bar {
+    -fx-background-color: rgba(255, 255, 255, 0.96);
+    -fx-background-radius: 18;
+    -fx-effect: dropshadow(gaussian, rgba(22, 46, 35, 0.11), 18, 0.07, 0, 6);
+}
+
+.backend-action-bar {
+    -fx-padding: 14;
+}
+
+.backend-filter-label {
+    -fx-text-fill: #6a7d73;
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
+}
+
+.backend-input,
+.backend-text-input {
+    -fx-background-color: #f7faf7;
+    -fx-border-color: #cddbd1;
+    -fx-border-radius: 12;
+    -fx-background-radius: 12;
+    -fx-padding: 5 8 5 8;
+}
+
+.backend-input:focused,
+.backend-text-input:focused {
+    -fx-border-color: #1f7a4c;
+}
+
+.backend-primary-btn {
+    -fx-background-color: #ffcc4d;
+    -fx-background-radius: 12;
+    -fx-text-fill: #1c2b21;
+    -fx-font-weight: bold;
+    -fx-padding: 9 14 9 14;
+    -fx-cursor: hand;
+}
+
+.backend-primary-btn:hover {
+    -fx-background-color: #ffd86d;
+}
+
+.backend-secondary-btn {
+    -fx-background-color: transparent;
+    -fx-border-color: #c8d8cf;
+    -fx-border-radius: 12;
+    -fx-background-radius: 12;
+    -fx-text-fill: #294638;
+    -fx-padding: 8 13 8 13;
+    -fx-cursor: hand;
+}
+
+.backend-secondary-btn:hover {
+    -fx-background-color: #f1f6f2;
+}
+
+.backend-danger-btn {
+    -fx-background-color: #fff1f1;
+    -fx-border-color: #f1b5b5;
+    -fx-border-radius: 12;
+    -fx-background-radius: 12;
+    -fx-text-fill: #8a3030;
+    -fx-padding: 8 13 8 13;
+    -fx-cursor: hand;
+}
+
+.backend-danger-btn:hover {
+    -fx-background-color: #ffdede;
+}
+
+.backend-table {
+    -fx-background-color: rgba(255, 255, 255, 0.96);
+    -fx-background-radius: 18;
+    -fx-padding: 8;
+    -fx-effect: dropshadow(gaussian, rgba(22, 46, 35, 0.11), 18, 0.07, 0, 6);
+}
+
+.backend-table .column-header-background {
+    -fx-background-color: #ecf8ef;
+    -fx-background-radius: 14 14 0 0;
+}
+
+.backend-table .column-header,
+.backend-table .filler {
+    -fx-background-color: transparent;
+}
+
+.backend-table .column-header .label {
+    -fx-text-fill: #244235;
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
+}
+
+.backend-table .table-row-cell {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent transparent #edf2ee transparent;
+}
+
+.backend-table .table-row-cell:selected {
+    -fx-background-color: #fff4cf;
+    -fx-text-background-color: #14231c;
 }
 
 /* Vehicle Detail Page */
@@ -1024,4 +1188,581 @@
 .booking-status-error {
     -fx-background-color: #fff1f1;
     -fx-text-fill: #8a3030;
+}
+
+/* Member Reservations */
+.reservations-root {
+    -fx-background-color: linear-gradient(to bottom right, #f4f7f1 0%, #eef5ed 45%, #ffffff 100%);
+}
+
+.reservations-hero {
+    -fx-background-color: linear-gradient(to bottom right, #0c1f1a, #123d2d 58%, #1f7a4c);
+    -fx-background-radius: 24;
+    -fx-padding: 26 30 28 30;
+    -fx-effect: dropshadow(gaussian, rgba(7, 25, 18, 0.28), 24, 0.10, 0, 8);
+}
+
+.reservations-eyebrow {
+    -fx-background-color: rgba(255, 255, 255, 0.14);
+    -fx-background-radius: 999;
+    -fx-text-fill: #d7f8e5;
+    -fx-font-size: 11px;
+    -fx-font-weight: bold;
+    -fx-padding: 6 12 6 12;
+}
+
+.reservations-title {
+    -fx-text-fill: white;
+    -fx-font-size: 32px;
+    -fx-font-weight: bold;
+}
+
+.reservations-subtitle {
+    -fx-text-fill: #d9efe3;
+    -fx-font-size: 13px;
+}
+
+.reservations-summary {
+    -fx-text-fill: #ffcc4d;
+    -fx-font-size: 15px;
+    -fx-font-weight: bold;
+    -fx-padding: 8 0 0 0;
+}
+
+.reservations-feedback {
+    -fx-background-color: #effaf2;
+    -fx-border-color: #9fd2ae;
+    -fx-border-radius: 14;
+    -fx-background-radius: 14;
+    -fx-text-fill: #205d39;
+    -fx-font-weight: bold;
+    -fx-padding: 11 14 11 14;
+}
+
+.reservations-scroll {
+    -fx-background-color: transparent;
+    -fx-background: transparent;
+    -fx-padding: 0;
+}
+
+.reservations-scroll .viewport {
+    -fx-background-color: transparent;
+}
+
+.reservations-card-list {
+    -fx-padding: 4 4 24 4;
+}
+
+.reservation-card,
+.reservations-empty {
+    -fx-background-color: rgba(255, 255, 255, 0.96);
+    -fx-background-radius: 20;
+    -fx-padding: 18;
+    -fx-effect: dropshadow(gaussian, rgba(22, 46, 35, 0.13), 22, 0.08, 0, 8);
+}
+
+.reservation-card-highlight {
+    -fx-border-color: #ffcc4d;
+    -fx-border-width: 2;
+    -fx-border-radius: 20;
+}
+
+.reservation-card-title {
+    -fx-text-fill: #14231c;
+    -fx-font-size: 18px;
+    -fx-font-weight: bold;
+}
+
+.reservation-card-number {
+    -fx-text-fill: #667a70;
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
+}
+
+.reservation-visual {
+    -fx-background-color: linear-gradient(to bottom right, #dceee2, #f7fbf8);
+    -fx-background-radius: 16;
+    -fx-padding: 8;
+}
+
+.reservation-visual-make {
+    -fx-text-fill: #224534;
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+}
+
+.reservation-visual-model {
+    -fx-text-fill: #5f786c;
+    -fx-font-size: 11px;
+}
+
+.reservation-status-pill {
+    -fx-background-radius: 999;
+    -fx-font-size: 11px;
+    -fx-font-weight: bold;
+    -fx-padding: 7 11 7 11;
+}
+
+.reservation-status-active {
+    -fx-background-color: #ecf8ef;
+    -fx-text-fill: #1f7a4c;
+}
+
+.reservation-status-complete {
+    -fx-background-color: #eef4ff;
+    -fx-text-fill: #285b9f;
+}
+
+.reservation-status-cancelled {
+    -fx-background-color: #fff1f1;
+    -fx-text-fill: #8a3030;
+}
+
+.reservation-status-neutral {
+    -fx-background-color: #f0f4ef;
+    -fx-text-fill: #435a4f;
+}
+
+.reservation-detail-grid {
+    -fx-background-color: #f7faf7;
+    -fx-background-radius: 16;
+    -fx-padding: 12;
+}
+
+.reservation-detail-block {
+    -fx-min-width: 110;
+}
+
+.reservation-detail-label {
+    -fx-text-fill: #6a7d73;
+    -fx-font-size: 11px;
+    -fx-font-weight: bold;
+}
+
+.reservation-detail-value {
+    -fx-text-fill: #1c3327;
+    -fx-font-size: 12.5px;
+    -fx-font-weight: bold;
+}
+
+.reservations-primary-btn {
+    -fx-background-color: #ffcc4d;
+    -fx-background-radius: 12;
+    -fx-text-fill: #1c2b21;
+    -fx-font-weight: bold;
+    -fx-padding: 9 14 9 14;
+    -fx-cursor: hand;
+}
+
+.reservations-primary-btn:hover {
+    -fx-background-color: #ffd86d;
+}
+
+.reservations-secondary-btn {
+    -fx-background-color: transparent;
+    -fx-border-color: #c8d8cf;
+    -fx-border-radius: 12;
+    -fx-background-radius: 12;
+    -fx-text-fill: #294638;
+    -fx-padding: 8 13 8 13;
+    -fx-cursor: hand;
+}
+
+.reservations-secondary-btn:hover {
+    -fx-background-color: #f1f6f2;
+}
+
+.reservations-danger-btn {
+    -fx-background-color: #fff1f1;
+    -fx-border-color: #f1b5b5;
+    -fx-border-radius: 12;
+    -fx-background-radius: 12;
+    -fx-text-fill: #8a3030;
+    -fx-padding: 8 13 8 13;
+    -fx-cursor: hand;
+}
+
+.reservations-danger-btn:hover {
+    -fx-background-color: #ffdede;
+}
+
+.reservations-primary-btn:disabled,
+.reservations-secondary-btn:disabled,
+.reservations-danger-btn:disabled {
+    -fx-opacity: 0.45;
+}
+
+.reservations-empty {
+    -fx-padding: 42;
+}
+
+.reservations-empty-title {
+    -fx-text-fill: #183125;
+    -fx-font-size: 20px;
+    -fx-font-weight: bold;
+}
+
+.reservations-empty-body {
+    -fx-text-fill: #60776b;
+    -fx-font-size: 13px;
+}
+
+.reservation-modal {
+    -fx-background-color: linear-gradient(to bottom right, #f7faf7, #ffffff);
+}
+
+.reservation-modal-hero {
+    -fx-background-color: #eef6f0;
+    -fx-background-radius: 18;
+    -fx-padding: 14;
+}
+
+.reservation-modal-title {
+    -fx-text-fill: #14231c;
+    -fx-font-size: 20px;
+    -fx-font-weight: bold;
+}
+
+.reservation-modal-code {
+    -fx-background-color: #ecf8ef;
+    -fx-background-radius: 999;
+    -fx-text-fill: #1f7a4c;
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
+    -fx-padding: 7 11 7 11;
+}
+
+.reservation-modal-body {
+    -fx-text-fill: #60776b;
+    -fx-font-size: 13px;
+}
+
+.reservation-modal-grid {
+    -fx-background-color: rgba(255, 255, 255, 0.92);
+    -fx-background-radius: 16;
+    -fx-padding: 14;
+}
+
+.reservation-modal-label {
+    -fx-text-fill: #6a7d73;
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
+}
+
+.reservation-modal-value {
+    -fx-text-fill: #1c3327;
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
+}
+
+/* Member Profile */
+.profile-root {
+    -fx-background-color: linear-gradient(to bottom right, #f4f7f1 0%, #eef5ed 45%, #ffffff 100%);
+}
+
+.profile-hero {
+    -fx-background-color: linear-gradient(to bottom right, #0c1f1a, #123d2d 58%, #1f7a4c);
+    -fx-background-radius: 24;
+    -fx-padding: 26 30 28 30;
+    -fx-effect: dropshadow(gaussian, rgba(7, 25, 18, 0.28), 24, 0.10, 0, 8);
+}
+
+.profile-eyebrow {
+    -fx-background-color: rgba(255, 255, 255, 0.14);
+    -fx-background-radius: 999;
+    -fx-text-fill: #d7f8e5;
+    -fx-font-size: 11px;
+    -fx-font-weight: bold;
+    -fx-padding: 6 12 6 12;
+}
+
+.profile-title {
+    -fx-text-fill: white;
+    -fx-font-size: 32px;
+    -fx-font-weight: bold;
+}
+
+.profile-subtitle {
+    -fx-text-fill: #d9efe3;
+    -fx-font-size: 13px;
+}
+
+.profile-card {
+    -fx-background-color: rgba(255, 255, 255, 0.96);
+    -fx-background-radius: 20;
+    -fx-padding: 20;
+    -fx-effect: dropshadow(gaussian, rgba(22, 46, 35, 0.13), 22, 0.08, 0, 8);
+}
+
+.profile-card-title {
+    -fx-text-fill: #14231c;
+    -fx-font-size: 18px;
+    -fx-font-weight: bold;
+}
+
+.profile-label {
+    -fx-text-fill: #6a7d73;
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
+}
+
+.profile-value {
+    -fx-text-fill: #1c3327;
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
+}
+
+/* Notifications */
+.notifications-root {
+    -fx-background-color: linear-gradient(to bottom right, #f4f7f1 0%, #eef5ed 45%, #ffffff 100%);
+}
+
+.notifications-hero {
+    -fx-background-color: linear-gradient(to bottom right, #0c1f1a, #123d2d 58%, #1f7a4c);
+    -fx-background-radius: 24;
+    -fx-padding: 26 30 28 30;
+    -fx-effect: dropshadow(gaussian, rgba(7, 25, 18, 0.28), 24, 0.10, 0, 8);
+}
+
+.notifications-eyebrow {
+    -fx-background-color: rgba(255, 255, 255, 0.14);
+    -fx-background-radius: 999;
+    -fx-text-fill: #d7f8e5;
+    -fx-font-size: 11px;
+    -fx-font-weight: bold;
+    -fx-padding: 6 12 6 12;
+}
+
+.notifications-title {
+    -fx-text-fill: white;
+    -fx-font-size: 32px;
+    -fx-font-weight: bold;
+}
+
+.notifications-subtitle {
+    -fx-text-fill: #d9efe3;
+    -fx-font-size: 13px;
+}
+
+.notifications-summary {
+    -fx-text-fill: #ffcc4d;
+    -fx-font-size: 15px;
+    -fx-font-weight: bold;
+    -fx-padding: 8 0 0 0;
+}
+
+.notifications-scroll {
+    -fx-background-color: transparent;
+    -fx-background: transparent;
+    -fx-padding: 0;
+}
+
+.notifications-scroll .viewport {
+    -fx-background-color: transparent;
+}
+
+.notifications-card-list {
+    -fx-padding: 4 4 24 4;
+}
+
+.notification-card,
+.notifications-empty {
+    -fx-background-color: rgba(255, 255, 255, 0.96);
+    -fx-background-radius: 20;
+    -fx-padding: 18;
+    -fx-effect: dropshadow(gaussian, rgba(22, 46, 35, 0.13), 22, 0.08, 0, 8);
+}
+
+.notification-card-unread {
+    -fx-border-color: #ffcc4d;
+    -fx-border-width: 2;
+    -fx-border-radius: 20;
+}
+
+.notification-type {
+    -fx-text-fill: #14231c;
+    -fx-font-size: 15px;
+    -fx-font-weight: bold;
+}
+
+.notification-message {
+    -fx-text-fill: #1c3327;
+    -fx-font-size: 13.5px;
+}
+
+.notification-date {
+    -fx-text-fill: #6a7d73;
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
+}
+
+.notification-unread-pill {
+    -fx-background-color: #ffcc4d;
+    -fx-background-radius: 999;
+    -fx-text-fill: #1c2b21;
+    -fx-font-size: 11px;
+    -fx-font-weight: bold;
+    -fx-padding: 7 11 7 11;
+}
+
+.notification-read-pill {
+    -fx-background-color: #ecf8ef;
+    -fx-background-radius: 999;
+    -fx-text-fill: #1f7a4c;
+    -fx-font-size: 11px;
+    -fx-font-weight: bold;
+    -fx-padding: 7 11 7 11;
+}
+
+.notifications-empty {
+    -fx-padding: 42;
+}
+
+.notifications-empty-title {
+    -fx-text-fill: #183125;
+    -fx-font-size: 20px;
+    -fx-font-weight: bold;
+}
+
+.notifications-empty-body {
+    -fx-text-fill: #60776b;
+    -fx-font-size: 13px;
+}
+
+/* Payments */
+.payments-root {
+    -fx-background-color: linear-gradient(to bottom right, #f4f7f1 0%, #eef5ed 45%, #ffffff 100%);
+}
+
+.payments-hero {
+    -fx-background-color: linear-gradient(to bottom right, #0c1f1a, #123d2d 58%, #1f7a4c);
+    -fx-background-radius: 24;
+    -fx-padding: 26 30 28 30;
+    -fx-effect: dropshadow(gaussian, rgba(7, 25, 18, 0.28), 24, 0.10, 0, 8);
+}
+
+.payments-eyebrow {
+    -fx-background-color: rgba(255, 255, 255, 0.14);
+    -fx-background-radius: 999;
+    -fx-text-fill: #d7f8e5;
+    -fx-font-size: 11px;
+    -fx-font-weight: bold;
+    -fx-padding: 6 12 6 12;
+}
+
+.payments-title {
+    -fx-text-fill: white;
+    -fx-font-size: 32px;
+    -fx-font-weight: bold;
+}
+
+.payments-subtitle {
+    -fx-text-fill: #d9efe3;
+    -fx-font-size: 13px;
+}
+
+.payments-summary {
+    -fx-text-fill: #ffcc4d;
+    -fx-font-size: 15px;
+    -fx-font-weight: bold;
+    -fx-padding: 8 0 0 0;
+}
+
+.payments-scroll {
+    -fx-background-color: transparent;
+    -fx-background: transparent;
+    -fx-padding: 0;
+}
+
+.payments-scroll .viewport {
+    -fx-background-color: transparent;
+}
+
+.payments-card-list {
+    -fx-padding: 4 4 24 4;
+}
+
+.payment-card,
+.payments-empty {
+    -fx-background-color: rgba(255, 255, 255, 0.96);
+    -fx-background-radius: 20;
+    -fx-padding: 18;
+    -fx-effect: dropshadow(gaussian, rgba(22, 46, 35, 0.13), 22, 0.08, 0, 8);
+}
+
+.payment-amount {
+    -fx-text-fill: #14231c;
+    -fx-font-size: 24px;
+    -fx-font-weight: bold;
+}
+
+.payment-id {
+    -fx-text-fill: #667a70;
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
+}
+
+.payment-reservation {
+    -fx-text-fill: #1f7a4c;
+    -fx-font-size: 12.5px;
+    -fx-font-weight: bold;
+}
+
+.payment-status-pill {
+    -fx-background-radius: 999;
+    -fx-font-size: 11px;
+    -fx-font-weight: bold;
+    -fx-padding: 7 11 7 11;
+}
+
+.payment-status-success {
+    -fx-background-color: #ecf8ef;
+    -fx-text-fill: #1f7a4c;
+}
+
+.payment-status-danger {
+    -fx-background-color: #fff1f1;
+    -fx-text-fill: #8a3030;
+}
+
+.payment-status-neutral {
+    -fx-background-color: #f0f4ef;
+    -fx-text-fill: #435a4f;
+}
+
+.payment-detail-grid {
+    -fx-background-color: #f7faf7;
+    -fx-background-radius: 16;
+    -fx-padding: 12;
+}
+
+.payment-detail-block {
+    -fx-min-width: 140;
+}
+
+.payment-detail-label {
+    -fx-text-fill: #6a7d73;
+    -fx-font-size: 11px;
+    -fx-font-weight: bold;
+}
+
+.payment-detail-value {
+    -fx-text-fill: #1c3327;
+    -fx-font-size: 12.5px;
+    -fx-font-weight: bold;
+}
+
+.payments-empty {
+    -fx-padding: 42;
+}
+
+.payments-empty-title {
+    -fx-text-fill: #183125;
+    -fx-font-size: 20px;
+    -fx-font-weight: bold;
+}
+
+.payments-empty-body {
+    -fx-text-fill: #60776b;
+    -fx-font-size: 13px;
 }

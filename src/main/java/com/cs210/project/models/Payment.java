@@ -12,6 +12,8 @@ public class Payment {
     private BigDecimal amount;
     private PaymentStatus status;
     private PaymentType paymentType;
+    private String reservationNumber;
+    private String vehicleName;
 
     public Payment() {}
 
@@ -27,4 +29,8 @@ public class Payment {
     public void setStatus(PaymentStatus status) { this.status = status; }
     public PaymentType getPaymentType() { return paymentType; }
     public void setPaymentType(PaymentType paymentType) { this.paymentType = paymentType; }
+    public String getReservationNumber() { return reservationNumber; }
+    public void setReservationNumber(String reservationNumber) { this.reservationNumber = reservationNumber; }
+    public String getVehicleName() { return vehicleName; }
+    public void setVehicleName(String vehicleName) { this.vehicleName = vehicleName; }
 }

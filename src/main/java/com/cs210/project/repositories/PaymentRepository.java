@@ -97,9 +97,10 @@ public class PaymentRepository {
 
     public List<Payment> findByMemberId(int memberId) {
         List<Payment> list = new ArrayList<>();
-        String sql = "SELECT p.* FROM payments p " +
+        String sql = "SELECT p.*, r.reservation_number, v.make, v.model FROM payments p " +
                      "JOIN bills b ON p.bill_id = b.id " +
                      "JOIN vehicle_reservations r ON b.reservation_id = r.id " +
+                     "JOIN vehicles v ON r.vehicle_id = v.id " +
                      "WHERE r.member_id = ? ORDER BY p.creation_date DESC";
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -113,6 +114,8 @@ public class PaymentRepository {
                     p.setAmount(rs.getBigDecimal("amount"));
                     p.setStatus(PaymentStatus.fromInt(rs.getInt("status")));
                     p.setPaymentType(PaymentType.fromInt(rs.getInt("payment_type")));
+                    p.setReservationNumber(rs.getString("reservation_number"));
+                    p.setVehicleName(rs.getString("make") + " " + rs.getString("model"));
                     list.add(p);
                 }
             }

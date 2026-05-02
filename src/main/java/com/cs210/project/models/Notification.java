@@ -9,6 +9,7 @@ public class Notification {
     private NotificationType notificationType;
     private LocalDateTime createdOn;
     private String content;
+    private boolean read;
 
     public Notification() {}
 
@@ -22,4 +23,6 @@ public class Notification {
     public void setCreatedOn(LocalDateTime createdOn) { this.createdOn = createdOn; }
     public String getContent() { return content; }
     public void setContent(String content) { this.content = content; }
+    public boolean isRead() { return read; }
+    public void setRead(boolean read) { this.read = read; }
 }

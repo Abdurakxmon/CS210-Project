@@ -20,6 +20,7 @@ public class VehicleReservation {
     private String vehicleMake;
     private String vehicleModel;
     private String vehiclePlate;
+    private String vehicleImagePath;
     private String memberName;
     private String staffName;
     private String pickupLocationName;
@@ -73,4 +74,6 @@ public class VehicleReservation {
     public void setVehicleModel(String vehicleModel) { this.vehicleModel = vehicleModel; }
     public String getVehiclePlate() { return vehiclePlate; }
     public void setVehiclePlate(String vehiclePlate) { this.vehiclePlate = vehiclePlate; }
+    public String getVehicleImagePath() { return vehicleImagePath; }
+    public void setVehicleImagePath(String vehicleImagePath) { this.vehicleImagePath = vehicleImagePath; }
 }

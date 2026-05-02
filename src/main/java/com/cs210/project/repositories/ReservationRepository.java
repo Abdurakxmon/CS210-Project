@@ -30,7 +30,7 @@ public class ReservationRepository {
     }
 
     public List<VehicleReservation> findByMemberId(int memberId) {
-        String sql = "SELECT r.*, v.make, v.model, v.license_number, pl.name as pickup_location_name, " +
+        String sql = "SELECT r.*, v.make, v.model, v.license_number, v.image_path, pl.name as pickup_location_name, " +
                      "rl.name as return_location_name, b.total_amount, " +
                      "COALESCE((SELECT SUM(p.amount) FROM payments p WHERE p.bill_id = b.id AND p.status IN (3, 9)), 0) as paid_amount " +
                      "FROM vehicle_reservations r " +
@@ -43,7 +43,7 @@ public class ReservationRepository {
     }
 
     public List<VehicleReservation> findAll() {
-        String sql = "SELECT r.*, v.make, v.model, v.license_number, pm.name as member_name, ps.name as staff_name, " +
+        String sql = "SELECT r.*, v.make, v.model, v.license_number, v.image_path, pm.name as member_name, ps.name as staff_name, " +
                      "pl.name as pickup_location_name, rl.name as return_location_name, b.total_amount, " +
                      "COALESCE((SELECT SUM(p.amount) FROM payments p WHERE p.bill_id = b.id AND p.status IN (3, 9)), 0) as paid_amount " +
                      "FROM vehicle_reservations r " +
@@ -61,7 +61,7 @@ public class ReservationRepository {
     }
 
     public VehicleReservation findByNumber(String resNum) {
-        String sql = "SELECT r.*, v.make, v.model, v.license_number, pm.name as member_name, ps.name as staff_name, " +
+        String sql = "SELECT r.*, v.make, v.model, v.license_number, v.image_path, pm.name as member_name, ps.name as staff_name, " +
                      "pl.name as pickup_location_name, rl.name as return_location_name, b.total_amount, " +
                      "COALESCE((SELECT SUM(p.amount) FROM payments p WHERE p.bill_id = b.id AND p.status IN (3, 9)), 0) as paid_amount " +
                      "FROM vehicle_reservations r " +
@@ -80,7 +80,7 @@ public class ReservationRepository {
     }
 
     public VehicleReservation findPendingByVehicleAndMember(int vehicleId, int memberId) {
-        String sql = "SELECT r.*, v.make, v.model, v.license_number FROM vehicle_reservations r " +
+        String sql = "SELECT r.*, v.make, v.model, v.license_number, v.image_path FROM vehicle_reservations r " +
                      "JOIN vehicles v ON r.vehicle_id = v.id " +
                      "WHERE r.vehicle_id = ? AND r.member_id = ? AND r.status = 3 LIMIT 1"; // 3=CONFIRMED
         List<VehicleReservation> list = fetchReservations(sql, new Object[]{vehicleId, memberId});
@@ -88,7 +88,7 @@ public class ReservationRepository {
     }
 
     public VehicleReservation findActiveByVehicleId(int vehicleId) {
-        String sql = "SELECT r.*, v.make, v.model, v.license_number FROM vehicle_reservations r " +
+        String sql = "SELECT r.*, v.make, v.model, v.license_number, v.image_path FROM vehicle_reservations r " +
                      "JOIN vehicles v ON r.vehicle_id = v.id " +
                      "WHERE r.vehicle_id = ? AND r.status IN (2, 3, 7, 8) ORDER BY r.pickup_date DESC LIMIT 1";
         List<VehicleReservation> list = fetchReservations(sql, vehicleId);
@@ -168,6 +168,7 @@ public class ReservationRepository {
                     r.setVehicleMake(rs.getString("make"));
                     r.setVehicleModel(rs.getString("model"));
                     r.setVehiclePlate(rs.getString("license_number"));
+                    try { r.setVehicleImagePath(rs.getString("image_path")); } catch (Exception e) {}
                     
                     // New fields
                     try { r.setMemberName(rs.getString("member_name")); } catch (Exception e) {}

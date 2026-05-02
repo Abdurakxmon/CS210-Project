@@ -269,6 +269,7 @@ CREATE TABLE IF NOT EXISTS notifications (
     notification_type INT NOT NULL,
     created_on DATETIME NOT NULL,
     content TEXT NOT NULL,
+    is_read BOOLEAN NOT NULL DEFAULT FALSE,
     address VARCHAR(255) NULL,
     email VARCHAR(150) NULL,
     FOREIGN KEY (reservation_id) REFERENCES vehicle_reservations(id) ON DELETE CASCADE

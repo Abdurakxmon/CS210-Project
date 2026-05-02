@@ -46,6 +46,7 @@ public class VehiclesView extends VBox {
     private final TableView<Vehicle> table = new TableView<>();
     private final TilePane vehicleCards = new TilePane();
     private final Label resultCountLabel = new Label();
+    private final Label backendInventorySummaryLabel = new Label();
     private TextField memberSearchField;
     private ComboBox<VehicleType> memberTypeFilter;
     private ComboBox<CarType> memberClassFilter;
@@ -353,41 +354,56 @@ public class VehiclesView extends VBox {
     }
 
     private void setupManagementUI() {
-        setPadding(new Insets(20));
-        setSpacing(15);
+        getStyleClass().add("backend-inventory-root");
+        setPadding(new Insets(22));
+        setSpacing(18);
 
+        VBox hero = new VBox(10);
+        hero.getStyleClass().add("backend-inventory-hero");
+        Label eyebrow = new Label("OPERATIONS");
+        eyebrow.getStyleClass().add("backend-inventory-eyebrow");
         Label title = new Label("Vehicle Inventory");
-        title.setStyle("-fx-font-size: 20px; -fx-font-weight: bold;");
+        title.getStyleClass().add("backend-inventory-title");
+        Label subtitle = new Label("Manage fleet records, locations, parking stalls, technical status, and vehicle history.");
+        subtitle.getStyleClass().add("backend-inventory-subtitle");
+        backendInventorySummaryLabel.getStyleClass().add("backend-inventory-summary");
+        hero.getChildren().addAll(eyebrow, title, subtitle, backendInventorySummaryLabel);
 
         GridPane filterGrid = new GridPane();
+        filterGrid.getStyleClass().add("backend-filter-panel");
         filterGrid.setHgap(10);
         filterGrid.setVgap(10);
-        filterGrid.setPadding(new Insets(0, 0, 10, 0));
+        filterGrid.setPadding(new Insets(16));
 
         ComboBox<VehicleType> typeFilter = new ComboBox<>(FXCollections.observableArrayList(VehicleType.values()));
         typeFilter.setPromptText("Type");
         typeFilter.setPrefWidth(120);
+        typeFilter.getStyleClass().add("backend-input");
 
         ComboBox<VehicleStatus> statusFilter = new ComboBox<>(
                 FXCollections.observableArrayList(VehicleStatus.values()));
         statusFilter.setPromptText("Status");
         statusFilter.setPrefWidth(120);
+        statusFilter.getStyleClass().add("backend-input");
 
         ComboBox<Location> locationFilter = new ComboBox<>();
         locationFilter.setPromptText("Location");
         locationFilter.getItems().addAll(locationRepo.findAll());
         locationFilter.setPrefWidth(150);
+        locationFilter.getStyleClass().add("backend-input");
 
         ComboBox<RentalSystem> systemFilter = new ComboBox<>();
         systemFilter.setPromptText("System");
         systemFilter.getItems().addAll(systemRepo.findAll());
         systemFilter.setPrefWidth(150);
+        systemFilter.getStyleClass().add("backend-input");
 
         TextField modelSearch = new TextField();
         modelSearch.setPromptText("Search model...");
+        modelSearch.getStyleClass().add("backend-text-input");
 
         Button searchBtn = new Button("Search");
-        searchBtn.setStyle("-fx-font-weight: bold;");
+        searchBtn.getStyleClass().add("backend-primary-btn");
         searchBtn.setOnAction(e -> {
             List<Vehicle> results = vehicleRepo.search(
                     typeFilter.getValue(),
@@ -396,9 +412,11 @@ public class VehiclesView extends VBox {
                     locationFilter.getValue() != null ? locationFilter.getValue().getId() : null,
                     systemFilter.getValue() != null ? systemFilter.getValue().getId() : null);
             table.setItems(FXCollections.observableArrayList(results));
+            updateBackendInventorySummary(results);
         });
 
         Button clearBtn = new Button("Clear");
+        clearBtn.getStyleClass().add("backend-secondary-btn");
         clearBtn.setOnAction(e -> {
             typeFilter.setValue(null);
             statusFilter.setValue(null);
@@ -408,19 +426,26 @@ public class VehiclesView extends VBox {
             loadData();
         });
 
-        filterGrid.add(new Label("Filters:"), 0, 0);
+        Label filtersLabel = new Label("Filters");
+        filtersLabel.getStyleClass().add("backend-filter-label");
+        Label searchLabel = new Label("Search");
+        searchLabel.getStyleClass().add("backend-filter-label");
+
+        filterGrid.add(filtersLabel, 0, 0);
         filterGrid.add(typeFilter, 1, 0);
         filterGrid.add(statusFilter, 2, 0);
         filterGrid.add(systemFilter, 3, 0);
         filterGrid.add(locationFilter, 4, 0);
 
-        filterGrid.add(new Label("Search:"), 0, 1);
+        filterGrid.add(searchLabel, 0, 1);
         filterGrid.add(modelSearch, 1, 1, 2, 1);
         filterGrid.add(searchBtn, 3, 1);
         filterGrid.add(clearBtn, 4, 1);
 
         // Actions
         HBox actions = new HBox(10);
+        actions.getStyleClass().add("backend-action-bar");
+        actions.setAlignment(Pos.CENTER_LEFT);
         if (Session.isMember()) {
             Button reserveBtn = new Button("Reserve Selected");
             reserveBtn.setStyle("-fx-background-color: #2ecc71; -fx-text-fill: white;");
@@ -435,7 +460,7 @@ public class VehiclesView extends VBox {
 
         if (Session.isReceptionist() || Session.isSuperAdmin()) {
             Button historyBtn = new Button("View History");
-            historyBtn.setStyle("-fx-background-color: #3498db; -fx-text-fill: white;");
+            historyBtn.getStyleClass().add("backend-secondary-btn");
             historyBtn.setOnAction(e -> {
                 Vehicle selected = table.getSelectionModel().getSelectedItem();
                 if (selected != null)
@@ -445,7 +470,7 @@ public class VehiclesView extends VBox {
         }
 
         Button detailsBtn = new Button("View Details");
-        detailsBtn.setStyle("-fx-background-color: #95a5a6; -fx-text-fill: white;");
+        detailsBtn.getStyleClass().add("backend-secondary-btn");
         detailsBtn.setOnAction(e -> {
             Vehicle selected = table.getSelectionModel().getSelectedItem();
             if (selected != null)
@@ -454,7 +479,7 @@ public class VehiclesView extends VBox {
         actions.getChildren().add(detailsBtn);
 
         Button showBarcodeBtn = new Button("Show QR Code");
-        showBarcodeBtn.setStyle("-fx-background-color: #f39c12; -fx-text-fill: white;");
+        showBarcodeBtn.getStyleClass().add("backend-secondary-btn");
         showBarcodeBtn.setOnAction(e -> {
             Vehicle selected = table.getSelectionModel().getSelectedItem();
             if (selected != null) showBarcodeDialog(selected);
@@ -463,11 +488,11 @@ public class VehiclesView extends VBox {
 
         if (Session.isSuperAdmin() || Session.isReceptionist()) {
             Button addBtn = new Button("Add Vehicle");
-            addBtn.setStyle("-fx-background-color: #2ecc71; -fx-text-fill: white;");
+            addBtn.getStyleClass().add("backend-primary-btn");
             addBtn.setOnAction(e -> showVehicleDialog(null));
 
             Button deleteBtn = new Button("Delete Vehicle");
-            deleteBtn.setStyle("-fx-background-color: #e74c3c; -fx-text-fill: white;");
+            deleteBtn.getStyleClass().add("backend-danger-btn");
             deleteBtn.setOnAction(e -> {
                 Vehicle selected = table.getSelectionModel().getSelectedItem();
                 if (selected != null) {
@@ -477,7 +502,7 @@ public class VehiclesView extends VBox {
             });
 
             Button reactivateBtn = new Button("Reactivate");
-            reactivateBtn.setStyle("-fx-background-color: #f39c12; -fx-text-fill: white;");
+            reactivateBtn.getStyleClass().add("backend-secondary-btn");
             reactivateBtn.setOnAction(e -> {
                 Vehicle selected = table.getSelectionModel().getSelectedItem();
                 if (selected != null) {
@@ -487,7 +512,7 @@ public class VehiclesView extends VBox {
             });
 
             Button editBtn = new Button("Edit Vehicle");
-            editBtn.setStyle("-fx-background-color: #3498db; -fx-text-fill: white;");
+            editBtn.getStyleClass().add("backend-secondary-btn");
             editBtn.setOnAction(e -> {
                 Vehicle selected = table.getSelectionModel().getSelectedItem();
                 if (selected != null)
@@ -526,8 +551,11 @@ public class VehiclesView extends VBox {
 
         table.getColumns().addAll(makeCol, modelCol, plateCol, locCol, stallCol, transmissionCol, fuelCol, fuelLevelCol, priceCol, statusCol, activeCol);
         table.setPlaceholder(new Label("No vehicles found."));
+        table.getStyleClass().add("backend-table");
+        table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
+        VBox.setVgrow(table, Priority.ALWAYS);
 
-        getChildren().addAll(title, filterGrid, actions, table);
+        getChildren().addAll(hero, filterGrid, actions, table);
     }
 
     private void showVehicleDialog(Vehicle vehicle) {
@@ -930,7 +958,20 @@ public class VehiclesView extends VBox {
                     .collect(Collectors.toList());
             applyMemberFilters();
         } else {
-            table.setItems(FXCollections.observableArrayList(vehicleRepo.findAll()));
+            List<Vehicle> vehicles = vehicleRepo.findAll();
+            table.setItems(FXCollections.observableArrayList(vehicles));
+            updateBackendInventorySummary(vehicles);
         }
+    }
+
+    private void updateBackendInventorySummary(List<Vehicle> vehicles) {
+        if (backendInventorySummaryLabel == null || vehicles == null) {
+            return;
+        }
+        long active = vehicles.stream().filter(Vehicle::isActive).count();
+        long available = vehicles.stream().filter(vehicle -> vehicle.getStatus() == VehicleStatus.AVAILABLE).count();
+        long loaned = vehicles.stream().filter(vehicle -> vehicle.getStatus() == VehicleStatus.LOANED).count();
+        backendInventorySummaryLabel.setText(vehicles.size() + " vehicles · " + active + " active · "
+                + available + " available · " + loaned + " loaned");
     }
 }

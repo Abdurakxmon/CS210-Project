@@ -8,17 +8,26 @@ import com.cs210.project.services.ReservationService;
 import com.cs210.project.services.RentalService;
 import javafx.collections.FXCollections;
 import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.control.TextInputDialog;
 import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
+import javafx.scene.input.Clipboard;
+import javafx.scene.input.ClipboardContent;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
+import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.math.BigDecimal;
 
@@ -33,18 +42,40 @@ public class ReservationsListView extends VBox {
     private final PaymentRepository paymentRepo = new PaymentRepository();
     
     private final TableView<VehicleReservation> table = new TableView<>();
+    private final String highlightReservationNumber;
+    private final String feedbackMessage;
+    private final VBox memberCards = new VBox(14);
+    private final Label memberSummaryLabel = new Label();
+    private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern("MMM d, yyyy HH:mm");
 
     public ReservationsListView() {
+        this(null, null);
+    }
+
+    public ReservationsListView(String highlightReservationNumber, String feedbackMessage) {
+        this.highlightReservationNumber = highlightReservationNumber;
+        this.feedbackMessage = feedbackMessage;
         setupUI();
         loadData();
     }
 
     private void setupUI() {
+        if (Session.isMember()) {
+            setupMemberReservationsUI();
+            return;
+        }
+
         setPadding(new Insets(20));
         setSpacing(15);
 
-        Label title = new Label(Session.isMember() ? "My Reservations" : "All Reservations");
+        Label title = new Label("All Reservations");
         title.setStyle("-fx-font-size: 20px; -fx-font-weight: bold;");
+
+        Label feedbackLabel = new Label(feedbackMessage == null ? "" : feedbackMessage);
+        feedbackLabel.setWrapText(true);
+        feedbackLabel.setVisible(feedbackMessage != null && !feedbackMessage.isBlank());
+        feedbackLabel.setManaged(feedbackLabel.isVisible());
+        feedbackLabel.setStyle("-fx-background-color: #e8f7ee; -fx-text-fill: #17633a; -fx-padding: 10 12; -fx-background-radius: 8; -fx-font-weight: bold;");
 
         // Columns
         TableColumn<VehicleReservation, String> resNumCol = new TableColumn<>("Res #");
@@ -173,7 +204,45 @@ public class ReservationsListView extends VBox {
         });
 
         actions.getChildren().addAll(cancelBtn, returnBtn, detailsBtn);
-        getChildren().addAll(title, actions, table);
+        getChildren().addAll(title, feedbackLabel, actions, table);
+    }
+
+    private void setupMemberReservationsUI() {
+        getStyleClass().add("reservations-root");
+        setPadding(new Insets(22));
+        setSpacing(18);
+
+        VBox hero = new VBox(10);
+        hero.getStyleClass().add("reservations-hero");
+        Label eyebrow = new Label("MEMBER DASHBOARD");
+        eyebrow.getStyleClass().add("reservations-eyebrow");
+        Label title = new Label("My Reservations");
+        title.getStyleClass().add("reservations-title");
+        Label subtitle = new Label("Track upcoming pickups, rental status, totals, and return actions in one place.");
+        subtitle.getStyleClass().add("reservations-subtitle");
+        memberSummaryLabel.getStyleClass().add("reservations-summary");
+        hero.getChildren().addAll(eyebrow, title, subtitle, memberSummaryLabel);
+
+        Label feedbackLabel = new Label(feedbackMessage == null ? "" : feedbackMessage);
+        feedbackLabel.getStyleClass().add("reservations-feedback");
+        feedbackLabel.setWrapText(true);
+        feedbackLabel.setVisible(feedbackMessage != null && !feedbackMessage.isBlank());
+        feedbackLabel.setManaged(feedbackLabel.isVisible());
+
+        HBox actions = new HBox(10);
+        actions.setAlignment(Pos.CENTER_LEFT);
+        Button refreshBtn = new Button("Refresh");
+        refreshBtn.getStyleClass().add("reservations-secondary-btn");
+        refreshBtn.setOnAction(e -> loadData());
+        actions.getChildren().add(refreshBtn);
+
+        memberCards.getStyleClass().add("reservations-card-list");
+        ScrollPane scrollPane = new ScrollPane(memberCards);
+        scrollPane.getStyleClass().add("reservations-scroll");
+        scrollPane.setFitToWidth(true);
+        VBox.setVgrow(scrollPane, Priority.ALWAYS);
+
+        getChildren().addAll(hero, feedbackLabel, actions, scrollPane);
     }
 
     private void showReservationDialog(VehicleReservation res) {
@@ -270,24 +339,37 @@ public class ReservationsListView extends VBox {
         dialog.setTitle("Reservation Details - " + res.getReservationNumber());
         dialog.initModality(Modality.APPLICATION_MODAL);
 
-        VBox layout = new VBox(15);
-        layout.setPadding(new Insets(20));
-        layout.setMinWidth(400);
+        VBox layout = new VBox(16);
+        layout.getStyleClass().add("reservation-modal");
+        layout.setPadding(new Insets(22));
+        layout.setMinWidth(560);
 
-        Label header = new Label("Reservation Info");
-        header.setStyle("-fx-font-size: 18px; -fx-font-weight: bold;");
+        HBox hero = new HBox(16);
+        hero.setAlignment(Pos.CENTER_LEFT);
+        hero.getStyleClass().add("reservation-modal-hero");
+        StackPane visual = createReservationVisual(res, 190, 112);
+        VBox heroText = new VBox(5);
+        Label header = new Label(res.getVehicleMake() + " " + res.getVehicleModel());
+        header.getStyleClass().add("reservation-modal-title");
+        Label number = new Label(res.getReservationNumber());
+        number.getStyleClass().add("reservation-modal-code");
+        Label status = new Label(res.getStatus().getLabel());
+        status.getStyleClass().addAll("reservation-status-pill", statusStyleClass(res.getStatus()));
+        heroText.getChildren().addAll(header, number, status);
+        hero.getChildren().addAll(visual, heroText);
 
         GridPane grid = new GridPane();
-        grid.setHgap(10); grid.setVgap(10);
+        grid.getStyleClass().add("reservation-modal-grid");
+        grid.setHgap(16);
+        grid.setVgap(10);
 
         int r = 0;
-        grid.add(new Label("Member:"), 0, r); grid.add(new Label(res.getMemberName()), 1, r++);
-        grid.add(new Label("Vehicle:"), 0, r); grid.add(new Label(res.getVehicleMake() + " " + res.getVehicleModel() + " [" + res.getVehiclePlate() + "]"), 1, r++);
-        grid.add(new Label("Status:"), 0, r); grid.add(new Label(res.getStatus().getLabel()), 1, r++);
-        grid.add(new Label("Pickup:"), 0, r); grid.add(new Label(res.getPickupDate() != null ? res.getPickupDate().toString() : "N/A"), 1, r++);
-        grid.add(new Label("Due:"), 0, r); grid.add(new Label(res.getDueDate() != null ? res.getDueDate().toString() : "N/A"), 1, r++);
-        grid.add(new Label("Pickup Location:"), 0, r); grid.add(new Label(res.getPickupLocationName() != null ? res.getPickupLocationName() : String.valueOf(res.getPickupLocationId())), 1, r++);
-        grid.add(new Label("Return Location:"), 0, r); grid.add(new Label(res.getReturnLocationName() != null ? res.getReturnLocationName() : String.valueOf(res.getReturnLocationId())), 1, r++);
+        addModalRow(grid, "Member", res.getMemberName(), r++);
+        addModalRow(grid, "License plate", res.getVehiclePlate(), r++);
+        addModalRow(grid, "Pickup", formatDate(res.getPickupDate()), r++);
+        addModalRow(grid, "Due", formatDate(res.getDueDate()), r++);
+        addModalRow(grid, "Pickup location", res.getPickupLocationName() != null ? res.getPickupLocationName() : String.valueOf(res.getPickupLocationId()), r++);
+        addModalRow(grid, "Return location", res.getReturnLocationName() != null ? res.getReturnLocationName() : String.valueOf(res.getReturnLocationId()), r++);
         
         Bill bill = billRepo.findByReservationId(res.getId());
         String costStr = "N/A";
@@ -297,20 +379,31 @@ public class ReservationsListView extends VBox {
             BigDecimal paid = paymentRepo.getSuccessfulPaidAmount(bill.getId());
             paidStr = String.format("$%.2f", paid);
         }
-        grid.add(new Label("Total Cost:"), 0, r); grid.add(new Label(costStr), 1, r++);
-        grid.add(new Label("Paid So Far:"), 0, r); grid.add(new Label(paidStr), 1, r++);
+        addModalRow(grid, "Total cost", costStr, r++);
+        addModalRow(grid, "Paid so far", paidStr, r++);
 
         if (res.getStatus() == ReservationStatus.COMPLETED) {
-            grid.add(new Label("Returned On:"), 0, r); grid.add(new Label(res.getReturnDate().toString()), 1, r++);
-            grid.add(new Label("Processed By:"), 0, r); grid.add(new Label(res.getStaffName() != null ? res.getStaffName() : "System"), 1, r++);
+            addModalRow(grid, "Returned on", formatDate(res.getReturnDate()), r++);
+            addModalRow(grid, "Processed by", res.getStaffName() != null ? res.getStaffName() : "System", r++);
         }
 
         Button closeBtn = new Button("Close");
+        closeBtn.getStyleClass().add("reservations-primary-btn");
         closeBtn.setOnAction(e -> dialog.close());
 
-        layout.getChildren().addAll(header, new Separator(), grid, new Separator(), closeBtn);
+        layout.getChildren().addAll(hero, grid, closeBtn);
         dialog.setScene(new Scene(layout));
         dialog.show();
+    }
+
+    private void addModalRow(GridPane grid, String label, String value, int row) {
+        Label labelNode = new Label(label);
+        labelNode.getStyleClass().add("reservation-modal-label");
+        Label valueNode = new Label(value == null || value.isBlank() ? "N/A" : value);
+        valueNode.getStyleClass().add("reservation-modal-value");
+        valueNode.setWrapText(true);
+        grid.add(labelNode, 0, row);
+        grid.add(valueNode, 1, row);
     }
 
     private void showWorkerInspectionDialog(VehicleReservation reservation, String mileageValue) {
@@ -380,6 +473,8 @@ public class ReservationsListView extends VBox {
         List<VehicleReservation> data;
         if (Session.isMember()) {
             data = resService.getMyReservations(Session.getMember().getId());
+            table.setItems(FXCollections.observableArrayList(data));
+            populateMemberCards(data);
         } else {
             data = resService.getAllReservations();
             if (Session.isWorker()) {
@@ -388,7 +483,224 @@ public class ReservationsListView extends VBox {
                     .filter(res -> res.getStatus() == ReservationStatus.WAITING_FOR_INSPECTION)
                     .toList();
             }
+            table.setItems(FXCollections.observableArrayList(data));
         }
-        table.setItems(FXCollections.observableArrayList(data));
+        selectHighlightedReservation();
+    }
+
+    private void populateMemberCards(List<VehicleReservation> reservations) {
+        memberCards.getChildren().clear();
+        int activeCount = (int) reservations.stream()
+                .filter(res -> res.getStatus() != ReservationStatus.CANCELLED && res.getStatus() != ReservationStatus.COMPLETED)
+                .count();
+        memberSummaryLabel.setText(reservations.size() + (reservations.size() == 1 ? " reservation" : " reservations")
+                + " · " + activeCount + " active");
+
+        if (reservations.isEmpty()) {
+            VBox empty = new VBox(8);
+            empty.getStyleClass().add("reservations-empty");
+            empty.setAlignment(Pos.CENTER);
+            Label emptyTitle = new Label("No reservations yet");
+            emptyTitle.getStyleClass().add("reservations-empty-title");
+            Label emptyBody = new Label("Choose an available automobile and confirm your pickup details to create one.");
+            emptyBody.getStyleClass().add("reservations-empty-body");
+            empty.getChildren().addAll(emptyTitle, emptyBody);
+            memberCards.getChildren().add(empty);
+            return;
+        }
+
+        for (VehicleReservation reservation : reservations) {
+            memberCards.getChildren().add(createMemberReservationCard(reservation));
+        }
+    }
+
+    private VBox createMemberReservationCard(VehicleReservation reservation) {
+        VBox card = new VBox(12);
+        card.getStyleClass().add("reservation-card");
+        if (highlightReservationNumber != null && highlightReservationNumber.equals(reservation.getReservationNumber())) {
+            card.getStyleClass().add("reservation-card-highlight");
+        }
+
+        HBox header = new HBox(14);
+        header.setAlignment(Pos.TOP_LEFT);
+        StackPane visual = createReservationVisual(reservation, 150, 88);
+        VBox titleBlock = new VBox(4);
+        Label vehicle = new Label(reservation.getVehicleMake() + " " + reservation.getVehicleModel());
+        vehicle.getStyleClass().add("reservation-card-title");
+        Label number = new Label(reservation.getReservationNumber());
+        number.getStyleClass().add("reservation-card-number");
+        titleBlock.getChildren().addAll(vehicle, number);
+        Region headerSpacer = new Region();
+        HBox.setHgrow(headerSpacer, Priority.ALWAYS);
+        Label status = new Label(reservation.getStatus() == null ? "Status" : reservation.getStatus().getLabel());
+        status.getStyleClass().addAll("reservation-status-pill", statusStyleClass(reservation.getStatus()));
+        header.getChildren().addAll(visual, titleBlock, headerSpacer, status);
+
+        HBox details = new HBox(10);
+        details.getStyleClass().add("reservation-detail-grid");
+        details.getChildren().addAll(
+                createDetailBlock("Pickup", formatDate(reservation.getPickupDate())),
+                createDetailBlock("Return", formatDate(reservation.getDueDate())),
+                createDetailBlock("Location", reservation.getPickupLocationName() != null ? reservation.getPickupLocationName() : "Assigned"),
+                createDetailBlock("Total", String.format("$%.2f", reservation.getAmount())),
+                createDetailBlock("Paid", String.format("$%.2f", reservation.getPaidAmount()))
+        );
+
+        HBox actions = new HBox(10);
+        actions.setAlignment(Pos.CENTER_RIGHT);
+        Button copyBtn = new Button("Copy #");
+        copyBtn.getStyleClass().add("reservations-secondary-btn");
+        copyBtn.setOnAction(e -> copyReservationNumber(reservation));
+        Button detailsBtn = new Button("View details");
+        detailsBtn.getStyleClass().add("reservations-secondary-btn");
+        detailsBtn.setOnAction(e -> showDetailsDialog(reservation));
+        Button cancelBtn = new Button("Cancel");
+        cancelBtn.getStyleClass().add("reservations-danger-btn");
+        cancelBtn.setDisable(reservation.getStatus() != ReservationStatus.CONFIRMED);
+        cancelBtn.setOnAction(e -> cancelReservation(reservation));
+        Button returnBtn = new Button("Return");
+        returnBtn.getStyleClass().add("reservations-primary-btn");
+        returnBtn.setDisable(reservation.getStatus() != ReservationStatus.PENDING);
+        returnBtn.setOnAction(e -> initiateMemberReturn(reservation));
+        actions.getChildren().addAll(copyBtn, detailsBtn, cancelBtn, returnBtn);
+
+        card.getChildren().addAll(header, details, actions);
+        return card;
+    }
+
+    private StackPane createReservationVisual(VehicleReservation reservation, double width, double height) {
+        StackPane visual = new StackPane();
+        visual.getStyleClass().add("reservation-visual");
+        visual.setPrefSize(width, height);
+        visual.setMinSize(width, height);
+        visual.setMaxSize(width, height);
+
+        if (reservation.getVehicleImagePath() != null && !reservation.getVehicleImagePath().isBlank()) {
+            try {
+                ImageView imageView = new ImageView(new Image(reservation.getVehicleImagePath(), width, height, true, true, true));
+                imageView.setFitWidth(width);
+                imageView.setFitHeight(height);
+                imageView.setPreserveRatio(true);
+                visual.getChildren().add(imageView);
+                return visual;
+            } catch (Exception ignored) {
+                // Use branded placeholder below.
+            }
+        }
+
+        VBox placeholder = new VBox(2);
+        placeholder.setAlignment(Pos.CENTER);
+        Label make = new Label(reservation.getVehicleMake() == null ? "Rental" : reservation.getVehicleMake());
+        make.getStyleClass().add("reservation-visual-make");
+        Label model = new Label(reservation.getVehicleModel() == null ? "Vehicle" : reservation.getVehicleModel());
+        model.getStyleClass().add("reservation-visual-model");
+        placeholder.getChildren().addAll(make, model);
+        visual.getChildren().add(placeholder);
+        return visual;
+    }
+
+    private VBox createDetailBlock(String label, String value) {
+        VBox block = new VBox(4);
+        block.getStyleClass().add("reservation-detail-block");
+        HBox.setHgrow(block, Priority.ALWAYS);
+        Label labelNode = new Label(label);
+        labelNode.getStyleClass().add("reservation-detail-label");
+        Label valueNode = new Label(value == null || value.isBlank() ? "N/A" : value);
+        valueNode.getStyleClass().add("reservation-detail-value");
+        valueNode.setWrapText(true);
+        block.getChildren().addAll(labelNode, valueNode);
+        return block;
+    }
+
+    private String formatDate(LocalDateTime date) {
+        return date == null ? "N/A" : date.format(DATE_FORMAT);
+    }
+
+    private String statusStyleClass(ReservationStatus status) {
+        if (status == ReservationStatus.CONFIRMED || status == ReservationStatus.WAITING_FOR_INSPECTION) {
+            return "reservation-status-active";
+        }
+        if (status == ReservationStatus.COMPLETED) {
+            return "reservation-status-complete";
+        }
+        if (status == ReservationStatus.CANCELLED) {
+            return "reservation-status-cancelled";
+        }
+        return "reservation-status-neutral";
+    }
+
+    private void copyReservationNumber(VehicleReservation reservation) {
+        ClipboardContent content = new ClipboardContent();
+        content.putString(reservation.getReservationNumber());
+        Clipboard.getSystemClipboard().setContent(content);
+        showCopyDialog(reservation);
+    }
+
+    private void showCopyDialog(VehicleReservation reservation) {
+        Stage dialog = new Stage();
+        dialog.initModality(Modality.APPLICATION_MODAL);
+        dialog.setTitle("Reservation copied");
+
+        VBox root = new VBox(14);
+        root.getStyleClass().add("reservation-modal");
+        root.setPadding(new Insets(22));
+        root.setPrefWidth(380);
+
+        Label title = new Label("Reservation number copied");
+        title.getStyleClass().add("reservation-modal-title");
+        Label number = new Label(reservation.getReservationNumber());
+        number.getStyleClass().add("reservation-modal-code");
+        Label body = new Label(reservation.getVehicleMake() + " " + reservation.getVehicleModel() + " is ready to reference at pickup or support.");
+        body.getStyleClass().add("reservation-modal-body");
+        body.setWrapText(true);
+        Button close = new Button("Close");
+        close.getStyleClass().add("reservations-primary-btn");
+        close.setOnAction(e -> dialog.close());
+
+        root.getChildren().addAll(title, number, body, close);
+        dialog.setScene(new Scene(root));
+        dialog.show();
+    }
+
+    private void cancelReservation(VehicleReservation reservation) {
+        Alert confirm = new Alert(Alert.AlertType.CONFIRMATION, "Cancel reservation " + reservation.getReservationNumber() + "?", ButtonType.YES, ButtonType.NO);
+        confirm.showAndWait().ifPresent(response -> {
+            if (response == ButtonType.YES) {
+                try {
+                    resService.cancelReservation(reservation.getId());
+                    loadData();
+                } catch (Exception ex) {
+                    new Alert(Alert.AlertType.ERROR, ex.getMessage()).show();
+                }
+            }
+        });
+    }
+
+    private void initiateMemberReturn(VehicleReservation reservation) {
+        Alert confirm = new Alert(Alert.AlertType.CONFIRMATION, "Initiate return for vehicle " + reservation.getVehiclePlate() + "?", ButtonType.YES, ButtonType.NO);
+        confirm.showAndWait().ifPresent(response -> {
+            if (response == ButtonType.YES) {
+                try {
+                    rentalService.initiateReturn(reservation.getReservationNumber());
+                    loadData();
+                    new Alert(Alert.AlertType.INFORMATION, "Return initiated. A worker will inspect the vehicle shortly.").show();
+                } catch (Exception ex) {
+                    new Alert(Alert.AlertType.ERROR, ex.getMessage()).show();
+                }
+            }
+        });
+    }
+
+    private void selectHighlightedReservation() {
+        if (highlightReservationNumber == null || highlightReservationNumber.isBlank()) {
+            return;
+        }
+        for (VehicleReservation reservation : table.getItems()) {
+            if (highlightReservationNumber.equals(reservation.getReservationNumber())) {
+                table.getSelectionModel().select(reservation);
+                table.scrollTo(reservation);
+                break;
+            }
+        }
     }
 }

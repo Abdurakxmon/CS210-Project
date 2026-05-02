@@ -460,7 +460,11 @@ public class ReservationView extends VBox {
                 bill = new BillRepository().findByReservationId(reservation.getId());
             }
             String amount = bill != null && bill.getTotalAmount() != null ? " Estimated bill: $" + bill.getTotalAmount() + "." : "";
-            showStatus("Reservation " + reservationNumber + " created successfully." + amount, true);
+            String successMessage = "Reservation " + reservationNumber + " created successfully." + amount + " A confirmation notification was added.";
+            showStatus(successMessage, true);
+            if (onViewChange != null) {
+                onViewChange.accept(new ReservationsListView(reservationNumber, successMessage));
+            }
         } catch (Exception ex) {
             showStatus("Reservation error: " + ex.getMessage(), false);
         }
