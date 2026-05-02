@@ -14,6 +14,8 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.control.ScrollPane;
+import javafx.scene.Node;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
@@ -22,6 +24,7 @@ import javafx.scene.layout.VBox;
 public class BackendWorkspaceView extends BorderPane {
     private final Runnable onLogout;
     private final Account user;
+    private final BorderPane centerHost = new BorderPane();
 
     public BackendWorkspaceView(Runnable onLogout) {
         this.onLogout = onLogout;
@@ -37,44 +40,55 @@ public class BackendWorkspaceView extends BorderPane {
 
         if (Session.isSuperAdmin()) {
             Button dashboardBtn = createSidebarBtn("Dashboard");
-            dashboardBtn.setOnAction(e -> setCenter(new SuperAdminDashboardView()));
+            dashboardBtn.setOnAction(e -> showContent(new SuperAdminDashboardView()));
             sidebar.getChildren().addAll(createSectionLabel("Overview"), dashboardBtn);
         }
 
         Button inventoryBtn = createSidebarBtn("Vehicle Inventory");
-        inventoryBtn.setOnAction(e -> setCenter(new VehiclesView(user, this::setCenter)));
+        inventoryBtn.setOnAction(e -> showContent(new VehiclesView(user, this::showContent)));
 
         String reservationsLabel = Session.isWorker() ? "Check Returned Cars" : "All Reservations";
         Button reservationsBtn = createSidebarBtn(reservationsLabel);
-        reservationsBtn.setOnAction(e -> setCenter(new ReservationsListView()));
+        reservationsBtn.setOnAction(e -> showContent(new ReservationsListView()));
 
         sidebar.getChildren().addAll(createSectionLabel("Operations"), inventoryBtn, reservationsBtn);
 
         if (!Session.isWorker()) {
             Button stallsBtn = createSidebarBtn("Parking Stalls");
-            stallsBtn.setOnAction(e -> setCenter(new ParkingStallManagementView()));
+            stallsBtn.setOnAction(e -> showContent(new ParkingStallManagementView()));
 
             Button pickupReturnBtn = createSidebarBtn("Pickup / Return");
-            pickupReturnBtn.setOnAction(e -> setCenter(new PickupReturnView()));
+            pickupReturnBtn.setOnAction(e -> showContent(new PickupReturnView()));
             sidebar.getChildren().addAll(stallsBtn, pickupReturnBtn);
         }
 
         if (Session.isSuperAdmin()) {
             Button accountsBtn = createSidebarBtn("Manage Accounts");
-            accountsBtn.setOnAction(e -> setCenter(new AccountManagementView()));
+            accountsBtn.setOnAction(e -> showContent(new AccountManagementView()));
 
             Button systemsBtn = createSidebarBtn("Manage Rental Systems");
-            systemsBtn.setOnAction(e -> setCenter(new RentalSystemManagementView()));
+            systemsBtn.setOnAction(e -> showContent(new RentalSystemManagementView()));
 
             Button locationsBtn = createSidebarBtn("Manage Locations");
-            locationsBtn.setOnAction(e -> setCenter(new LocationManagementView()));
+            locationsBtn.setOnAction(e -> showContent(new LocationManagementView()));
 
             sidebar.getChildren().addAll(createSectionLabel("Administration"), accountsBtn, systemsBtn, locationsBtn);
         }
 
         finishSidebar(sidebar);
-        setLeft(sidebar);
-        setCenter(Session.isSuperAdmin() ? new SuperAdminDashboardView() : new VehiclesView(user, this::setCenter));
+        ScrollPane sidebarScroll = new ScrollPane(sidebar);
+        sidebarScroll.setFitToWidth(true);
+        sidebarScroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+        sidebarScroll.getStyleClass().add("workspace-sidebar-scroll");
+        setLeft(sidebarScroll);
+        centerHost.getStyleClass().add("workspace-center-host");
+        setCenter(centerHost);
+        showContent(Session.isSuperAdmin() ? new SuperAdminDashboardView() : new VehiclesView(user, this::showContent));
+    }
+
+    private void showContent(Node content) {
+        BorderPane.setMargin(content, new Insets(0));
+        centerHost.setCenter(content);
     }
 
     private String roleText() {

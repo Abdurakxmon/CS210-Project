@@ -445,6 +445,19 @@
     -fx-effect: dropshadow(gaussian, rgba(7, 25, 18, 0.24), 22, 0.08, 4, 0);
 }
 
+.workspace-sidebar-scroll {
+    -fx-background: transparent;
+    -fx-background-color: transparent;
+}
+
+.workspace-sidebar-scroll .viewport {
+    -fx-background-color: transparent;
+}
+
+.workspace-center-host {
+    -fx-background-color: #eef5ed;
+}
+
 .workspace-brand {
     -fx-text-fill: white;
     -fx-font-size: 24px;

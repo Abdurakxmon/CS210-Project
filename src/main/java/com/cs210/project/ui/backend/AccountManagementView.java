@@ -12,6 +12,7 @@ import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
@@ -34,10 +35,18 @@ public class AccountManagementView extends VBox {
 
     private void setupUI() {
         setPadding(new Insets(20));
-        setSpacing(15);
+        setSpacing(16);
+        getStyleClass().add("backend-inventory-root");
 
+        VBox hero = new VBox(6);
+        hero.getStyleClass().add("backend-inventory-hero");
+        Label eyebrow = new Label("Administration");
+        eyebrow.getStyleClass().add("backend-inventory-eyebrow");
         Label title = new Label("Account Management");
-        title.setStyle("-fx-font-size: 20px; -fx-font-weight: bold;");
+        title.getStyleClass().add("backend-inventory-title");
+        Label subtitle = new Label("Create staff and member accounts, update roles, and control access status.");
+        subtitle.getStyleClass().add("backend-inventory-subtitle");
+        hero.getChildren().addAll(eyebrow, title, subtitle);
 
         TableColumn<Account, Integer> idCol = new TableColumn<>("ID");
         idCol.setCellValueFactory(new PropertyValueFactory<>("id"));
@@ -58,21 +67,27 @@ public class AccountManagementView extends VBox {
         activeCol.setCellValueFactory(new PropertyValueFactory<>("active"));
 
         table.getColumns().addAll(idCol, nameCol, userCol, roleCol, statusCol, activeCol);
+        table.getStyleClass().add("backend-table");
+        table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
+        table.setPlaceholder(new Label("No accounts found."));
+        VBox.setVgrow(table, Priority.ALWAYS);
 
         HBox actions = new HBox(10);
+        actions.getStyleClass().add("backend-action-bar");
         Button addBtn = new Button("Add User");
-        addBtn.setStyle("-fx-background-color: #2ecc71; -fx-text-fill: white;");
+        addBtn.getStyleClass().add("backend-primary-btn");
         addBtn.setOnAction(e -> showUserDialog(null));
 
         Button editBtn = new Button("Edit Selected");
-        editBtn.setStyle("-fx-background-color: #3498db; -fx-text-fill: white;");
+        editBtn.getStyleClass().add("backend-secondary-btn");
         editBtn.setOnAction(e -> {
             Account selected = table.getSelectionModel().getSelectedItem();
             if (selected != null) showUserDialog(selected);
+            else new Alert(Alert.AlertType.INFORMATION, "Select an account to edit.").show();
         });
 
         Button deactivateBtn = new Button("Deactivate Selected");
-        deactivateBtn.setStyle("-fx-background-color: #e74c3c; -fx-text-fill: white;");
+        deactivateBtn.getStyleClass().add("backend-danger-btn");
         deactivateBtn.setOnAction(e -> {
             Account selected = table.getSelectionModel().getSelectedItem();
             if (selected != null) {
@@ -83,21 +98,25 @@ public class AccountManagementView extends VBox {
                         loadData();
                     }
                 });
+            } else {
+                new Alert(Alert.AlertType.INFORMATION, "Select an account to deactivate.").show();
             }
         });
 
         Button reactivateBtn = new Button("Reactivate Selected");
-        reactivateBtn.setStyle("-fx-background-color: #f39c12; -fx-text-fill: white;");
+        reactivateBtn.getStyleClass().add("backend-secondary-btn");
         reactivateBtn.setOnAction(e -> {
             Account selected = table.getSelectionModel().getSelectedItem();
             if (selected != null) {
                 accountRepo.reactivate(selected.getId());
                 loadData();
+            } else {
+                new Alert(Alert.AlertType.INFORMATION, "Select an account to reactivate.").show();
             }
         });
 
         actions.getChildren().addAll(addBtn, editBtn, deactivateBtn, reactivateBtn);
-        getChildren().addAll(title, actions, table);
+        getChildren().addAll(hero, actions, table);
     }
 
     private void showUserDialog(Account account) {
@@ -127,6 +146,15 @@ public class AccountManagementView extends VBox {
         roleCombo.setValue(account != null ? account.getRoleType() : RoleType.MEMBER);
         ComboBox<AccountStatus> statusCombo = new ComboBox<>(FXCollections.observableArrayList(AccountStatus.values()));
         statusCombo.setValue(account != null ? account.getStatus() : AccountStatus.ACTIVE);
+        for (TextField field : new TextField[]{nameField, emailField, phoneField, addressField, cityField, userField, licenseField}) {
+            field.getStyleClass().add("backend-text-input");
+        }
+        passField.getStyleClass().add("backend-text-input");
+        confirmPassField.getStyleClass().add("backend-text-input");
+        birthDatePicker.getStyleClass().add("backend-input");
+        licenseExpiryPicker.getStyleClass().add("backend-input");
+        roleCombo.getStyleClass().add("backend-input");
+        statusCombo.getStyleClass().add("backend-input");
 
         grid.add(new Label("Full Name:"), 0, 0);
         grid.add(nameField, 1, 0);
@@ -160,7 +188,13 @@ public class AccountManagementView extends VBox {
         grid.add(statusCombo, 1, 10);
 
         Button saveBtn = new Button("Save");
+        saveBtn.getStyleClass().add("backend-primary-btn");
         saveBtn.setOnAction(e -> {
+            if (nameField.getText() == null || nameField.getText().isBlank()
+                    || userField.getText() == null || userField.getText().isBlank()) {
+                new Alert(Alert.AlertType.ERROR, "Full name and username are required.").show();
+                return;
+            }
             if (account == null) {
                 String validationError = validateNewUserInput(
                         roleCombo.getValue(),
