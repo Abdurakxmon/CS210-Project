@@ -5,6 +5,7 @@ import com.cs210.project.constants.Enums.AccountStatus;
 import com.cs210.project.constants.Enums.RoleType;
 import com.cs210.project.models.Account;
 import com.cs210.project.models.Person;
+import org.mindrot.jbcrypt.BCrypt;
 
 import java.sql.*;
 import java.util.ArrayList;
@@ -50,7 +51,7 @@ public class AccountRepository {
         String sql = "UPDATE accounts SET password_hash = ? WHERE id = ?";
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmt.setString(1, newPassword);
+            pstmt.setString(1, BCrypt.hashpw(newPassword, BCrypt.gensalt()));
             pstmt.setInt(2, accountId);
             pstmt.executeUpdate();
         } catch (SQLException e) { e.printStackTrace(); }
@@ -84,7 +85,7 @@ public class AccountRepository {
             PreparedStatement pstmtAccount = conn.prepareStatement(sqlAccount);
             pstmtAccount.setInt(1, personId);
             pstmtAccount.setString(2, username);
-            pstmtAccount.setString(3, password);
+            pstmtAccount.setString(3, BCrypt.hashpw(password, BCrypt.gensalt()));
             pstmtAccount.setInt(4, status.getValue());
             pstmtAccount.setInt(5, role.getValue());
             pstmtAccount.executeUpdate();

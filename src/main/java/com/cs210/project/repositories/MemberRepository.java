@@ -6,6 +6,7 @@ import com.cs210.project.constants.Enums.RoleType;
 import com.cs210.project.models.Account;
 import com.cs210.project.models.Member;
 import com.cs210.project.models.Person;
+import org.mindrot.jbcrypt.BCrypt;
 
 import java.sql.*;
 import java.util.ArrayList;
@@ -16,14 +17,21 @@ public class MemberRepository {
     public Account login(String username, String password) {
         String sql = "SELECT a.*, p.name, p.email, p.phone FROM accounts a " +
                      "JOIN persons p ON a.person_id = p.id " +
-                     "WHERE a.username = ? AND a.password_hash = ?";
+                     "WHERE a.username = ?";
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, username);
-            pstmt.setString(2, password); // Simplified: should be hashed
 
             try (ResultSet rs = pstmt.executeQuery()) {
                 if (rs.next()) {
+                    String storedPassword = rs.getString("password_hash");
+                    if (!passwordMatches(password, storedPassword)) return null;
+
+                    // Smooth migration path for legacy plaintext passwords stored in older datasets.
+                    if (!isBcryptHash(storedPassword)) {
+                        upgradePasswordHash(conn, rs.getInt("id"), password);
+                    }
+
                     Account account = new Account();
                     account.setId(rs.getInt("id"));
                     account.setPersonId(rs.getInt("person_id"));
@@ -45,6 +53,46 @@ public class MemberRepository {
             e.printStackTrace();
         }
         return null;
+    }
+
+    private boolean passwordMatches(String rawPassword, String storedPassword) {
+        if (rawPassword == null || storedPassword == null || storedPassword.isBlank()) return false;
+
+        if (isBcryptHash(storedPassword)) {
+            try {
+                String normalizedHash = normalizeBcryptVersion(storedPassword);
+                return BCrypt.checkpw(rawPassword, normalizedHash);
+            } catch (IllegalArgumentException e) {
+                // Corrupt/unsupported hash format should fail login instead of crashing UI thread.
+                return false;
+            }
+        }
+
+        // Legacy fallback for old plaintext records.
+        return rawPassword.equals(storedPassword);
+    }
+
+    private boolean isBcryptHash(String hash) {
+        return hash.startsWith("$2a$") || hash.startsWith("$2b$") || hash.startsWith("$2y$");
+    }
+
+    private String normalizeBcryptVersion(String hash) {
+        if (hash.startsWith("$2b$") || hash.startsWith("$2y$")) {
+            return "$2a$" + hash.substring(4);
+        }
+        return hash;
+    }
+
+    private void upgradePasswordHash(Connection conn, int accountId, String rawPassword) {
+        String updateSql = "UPDATE accounts SET password_hash = ? WHERE id = ?";
+        try (PreparedStatement updateStmt = conn.prepareStatement(updateSql)) {
+            updateStmt.setString(1, BCrypt.hashpw(rawPassword, BCrypt.gensalt()));
+            updateStmt.setInt(2, accountId);
+            updateStmt.executeUpdate();
+        } catch (SQLException e) {
+            // Login already succeeded; do not block user for best-effort migration.
+            System.err.println("Password hash upgrade failed for account_id=" + accountId + ": " + e.getMessage());
+        }
     }
 
     public Member findByAccountId(int accountId) {
@@ -74,6 +122,20 @@ public class MemberRepository {
             conn = DatabaseConnection.getConnection();
             conn.setAutoCommit(false);
 
+            // 0. Check duplicates
+            String checkSql = "SELECT (SELECT COUNT(*) FROM accounts WHERE username = ?) as user_exists, " +
+                              "(SELECT COUNT(*) FROM members WHERE driver_license_number = ?) as license_exists";
+            try (PreparedStatement checkStmt = conn.prepareStatement(checkSql)) {
+                checkStmt.setString(1, username);
+                checkStmt.setString(2, license);
+                try (ResultSet rs = checkStmt.executeQuery()) {
+                    if (rs.next()) {
+                        if (rs.getInt("user_exists") > 0) throw new SQLException("Username already exists.");
+                        if (rs.getInt("license_exists") > 0) throw new SQLException("Driver license already registered.");
+                    }
+                }
+            }
+
             // 1. Insert Person
             String sqlPerson = "INSERT INTO persons (name, email, phone, street_address, city, state, zipcode, country, birth_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
             PreparedStatement pstmtPerson = conn.prepareStatement(sqlPerson, Statement.RETURN_GENERATED_KEYS);
@@ -98,7 +160,11 @@ public class MemberRepository {
             PreparedStatement pstmtAccount = conn.prepareStatement(sqlAccount, Statement.RETURN_GENERATED_KEYS);
             pstmtAccount.setInt(1, personId);
             pstmtAccount.setString(2, username);
-            pstmtAccount.setString(3, password);
+            
+            // Hash password with BCrypt
+            String hashed = BCrypt.hashpw(password, BCrypt.gensalt());
+            pstmtAccount.setString(3, hashed);
+            
             pstmtAccount.setInt(4, AccountStatus.ACTIVE.getValue());
             pstmtAccount.setInt(5, RoleType.MEMBER.getValue());
             pstmtAccount.executeUpdate();
@@ -119,8 +185,8 @@ public class MemberRepository {
             conn.commit();
             return true;
         } catch (SQLException e) {
+            System.err.println("Registration DB Error: " + e.getMessage());
             if (conn != null) try { conn.rollback(); } catch (SQLException ex) { ex.printStackTrace(); }
-            e.printStackTrace();
             return false;
         } finally {
             if (conn != null) try { conn.close(); } catch (SQLException e) { e.printStackTrace(); }

@@ -113,26 +113,31 @@ public class RegistrationView extends StackPane {
                 msgLabel.setStyle("-fx-text-fill: red;");
                 return;
             }
-            boolean success = authService.register(
-                    nameField.getText(),
-                    emailField.getText(),
-                    phoneField.getText(),
-                    addressField.getText(),
-                    cityField.getText(),
-                    stateField.getText(),
-                    zipcodeField.getText(),
-                    birthDatePicker.getValue(),
-                    usernameField.getText(),
-                    passwordField.getText(),
-                    licenseField.getText(),
-                    expiryPicker.getValue().atStartOfDay()
-            );
-            if (success) {
-                msgLabel.setText("Registration successful! Please login.");
-                msgLabel.setStyle("-fx-text-fill: green;");
-            } else {
-                msgLabel.setText("Registration failed. Username or License might exist.");
-                msgLabel.setStyle("-fx-text-fill: red;");
+            try {
+                boolean success = authService.register(
+                        nameField.getText(),
+                        emailField.getText(),
+                        phoneField.getText(),
+                        addressField.getText(),
+                        cityField.getText(),
+                        stateField.getText(),
+                        zipcodeField.getText(),
+                        birthDatePicker.getValue(),
+                        usernameField.getText(),
+                        passwordField.getText(),
+                        licenseField.getText(),
+                        expiryPicker.getValue().atStartOfDay()
+                );
+                if (success) {
+                    msgLabel.setText("Registration successful! Please login.");
+                    msgLabel.setStyle("-fx-text-fill: #27ae60;");
+                } else {
+                    msgLabel.setText("Registration failed. Username or License might already be in use.");
+                    msgLabel.setStyle("-fx-text-fill: #e74c3c;");
+                }
+            } catch (Exception ex) {
+                msgLabel.setText("System error: " + ex.getMessage());
+                msgLabel.setStyle("-fx-text-fill: #e74c3c;");
             }
         });
 
