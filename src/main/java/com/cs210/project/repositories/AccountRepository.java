@@ -16,7 +16,8 @@ public class AccountRepository {
 
     public List<Account> findAll() {
         List<Account> accounts = new ArrayList<>();
-        String sql = "SELECT a.*, p.name, p.email, p.phone FROM accounts a " +
+        String sql = "SELECT a.*, p.name, p.email, p.phone, p.street_address, p.city, p.state, " +
+                     "p.zipcode, p.country, p.birth_date FROM accounts a " +
                      "JOIN persons p ON a.person_id = p.id";
         try (Connection conn = DatabaseConnection.getConnection();
              Statement stmt = conn.createStatement();
@@ -144,7 +145,8 @@ public class AccountRepository {
         person.setState(rs.getString("state"));
         person.setZipcode(rs.getString("zipcode"));
         person.setCountry(rs.getString("country"));
-        person.setBirthDate(rs.getDate("birth_date").toLocalDate());
+        Date birthDate = rs.getDate("birth_date");
+        person.setBirthDate(birthDate == null ? null : birthDate.toLocalDate());
         account.setPerson(person);
         return account;
     }
