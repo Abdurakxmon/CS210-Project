@@ -22,24 +22,4 @@ public class EquipmentRepository {
             }
         } catch (SQLException e) { e.printStackTrace(); }
     }
-
-    public List<Equipment> findByReservationId(int resId) {
-        List<Equipment> list = new ArrayList<>();
-        String sql = "SELECT * FROM equipment WHERE reservation_id = ?";
-        try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmt.setInt(1, resId);
-            try (ResultSet rs = pstmt.executeQuery()) {
-                while (rs.next()) {
-                    Equipment eq = new Equipment();
-                    eq.setId(rs.getInt("id"));
-                    eq.setReservationId(rs.getInt("reservation_id"));
-                    eq.setEquipmentType(EquipmentType.fromInt(rs.getInt("equipment_type")));
-                    eq.setPrice(rs.getBigDecimal("price"));
-                    list.add(eq);
-                }
-            }
-        } catch (SQLException e) { e.printStackTrace(); }
-        return list;
-    }
 }

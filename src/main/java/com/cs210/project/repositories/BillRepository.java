@@ -54,23 +54,6 @@ public class BillRepository {
         } catch (SQLException e) { e.printStackTrace(); }
     }
 
-    public void createBill(int resId, BigDecimal baseAmount) {
-        String sqlBill = "INSERT INTO bills (reservation_id, total_amount) VALUES (?, ?)";
-        try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sqlBill, Statement.RETURN_GENERATED_KEYS)) {
-            pstmt.setInt(1, resId);
-            pstmt.setBigDecimal(2, baseAmount);
-            pstmt.executeUpdate();
-            
-            int billId;
-            try (ResultSet rs = pstmt.getGeneratedKeys()) {
-                if (rs.next()) billId = rs.getInt(1); else return;
-            }
-            
-            addItem(billId, BillItemType.BASE_CHARGE, baseAmount, "Base Rental Charge");
-        } catch (SQLException e) { e.printStackTrace(); }
-    }
-
     public void addItem(int billId, BillItemType type, BigDecimal amount, String serviceName) {
         String sqlItem = "INSERT INTO bill_items (bill_id, item_type, amount, service_name) VALUES (?, ?, ?, ?)";
         String sqlUpdateTotal = "UPDATE bills SET total_amount = total_amount + ? WHERE id = ?";

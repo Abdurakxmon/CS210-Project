@@ -25,10 +25,6 @@ public class AuthService {
         return false;
     }
 
-    public boolean register(String name, String email, String username, String password, String license, LocalDateTime expiry) {
-        return register(name, email, null, null, null, null, null, null, username, password, license, expiry);
-    }
-
     public boolean register(String name, String email, String phone, String streetAddress, String city, String state,
                             String zipcode, java.time.LocalDate birthDate, String username, String password,
                             String license, LocalDateTime expiry) {
@@ -44,10 +40,6 @@ public class AuthService {
         p.setZipcode(zipcode);
         p.setBirthDate(birthDate);
         return memberRepo.register(p, username, password, license, expiry);
-    }
-
-    public void logout() {
-        Session.logout();
     }
 
     private void validateRegistrationData(LocalDate birthDate, String password, LocalDateTime licenseExpiry) {

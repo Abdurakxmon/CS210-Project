@@ -45,10 +45,6 @@ public class RentalService {
         notifyRepo.create(res.getId(), NotificationType.SYSTEM, "Return initiated. Please leave the vehicle at the designated area for inspection.");
     }
 
-    public void returnVehicle(String reservationNumber, int staffAccountId, int newMileage, String conditionLog, BigDecimal manualFine) throws Exception {
-        returnVehicle(reservationNumber, staffAccountId, newMileage, 100, conditionLog, manualFine, BigDecimal.ZERO, true, false, null, null);
-    }
-
     public void returnVehicle(String reservationNumber, int staffAccountId, int newMileage, int fuelLevel,
                               String damageDescription, BigDecimal damageFee, BigDecimal fuelFee,
                               boolean cleaned, boolean maintenanceRequired, Integer parkingStallId,
@@ -166,42 +162,4 @@ public class RentalService {
         return bill;
     }
 
-    public void processPickup(String vehicleBarcode, String memberLicense) throws Exception {
-        // 1. Scan the barcode of the vehicle
-        com.cs210.project.models.Vehicle v = vehicleRepo.findByBarcode(vehicleBarcode);
-        if (v == null) throw new Exception("Vehicle not found with barcode: " + vehicleBarcode);
-
-        // 2. Scan driving license or search customer (here we use license)
-        // Check if member exists
-        String sqlMember = "SELECT m.id FROM members m WHERE m.driver_license_number = ?";
-        int memberId = -1;
-        try (java.sql.Connection conn = com.cs210.project.config.DatabaseConnection.getConnection();
-             java.sql.PreparedStatement pstmt = conn.prepareStatement(sqlMember)) {
-            pstmt.setString(1, memberLicense);
-            try (java.sql.ResultSet rs = pstmt.executeQuery()) {
-                if (rs.next()) memberId = rs.getInt("id");
-            }
-        }
-        if (memberId == -1) throw new Exception("Member not found with license: " + memberLicense);
-
-        // 3. Check if the customer has a valid reservation for the vehicle
-        VehicleReservation res = resRepo.findPendingByVehicleAndMember(v.getId(), memberId);
-        if (res == null) throw new Exception("No valid CONFIRMED reservation found for this vehicle and member.");
-        eligibilityService.validateCustomerEligibility(res.getMemberId());
-        eligibilityService.validateNoFailedPaymentForReservation(res.getId());
-        ensureBillFullyPaid(res);
-
-        // 4. Update status of the vehicle to 'Loaned'
-        vehicleRepo.updateStatus(v.getId(), VehicleStatus.LOANED);
-
-        // 5. Mark reservation status (following diagram: 'Completed', but using logic: 'PENDING'/Active)
-        // Note: The diagram says 'Completed', but we'll use our Enums. COMPLETED usually means returned.
-        // Let's use CONFIRMED -> PENDING (meaning in progress)
-        resRepo.updateStatus(res.getId(), ReservationStatus.PENDING);
-
-        // 6. Send notification
-        notifyRepo.create(res.getId(), NotificationType.SYSTEM, "Vehicle " + v.getLicenseNumber() + " picked up successfully!");
-        
-        logRepo.addLog(v.getId(), VehicleLogType.OTHER, "Vehicle picked up via barcode scan flow.", null);
-    }
 }

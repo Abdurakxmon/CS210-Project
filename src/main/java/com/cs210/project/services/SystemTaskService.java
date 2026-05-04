@@ -71,7 +71,7 @@ public class SystemTaskService {
 
         Bill bill = billRepo.findByReservationId(reservation.getId());
         if (bill != null && !billRepo.hasItem(bill.getId(), BillItemType.LATE_FEE, "Overdue Late Fee")) {
-            billRepo.addItem(bill.getId(), BillItemType.LATE_FEE, new BigDecimal("25.00"), "Overdue Late Fee");
+            billRepo.addItem(bill.getId(), BillItemType.LATE_FEE, new BigDecimal("50.00"), "Overdue Late Fee");
             billRepo.updateTotal(bill.getId());
             notificationRepo.create(reservation.getId(), NotificationType.LATE_FEE_ADDED,
                     "A late fee has been added to reservation " + reservation.getReservationNumber() + ".");

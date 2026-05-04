@@ -12,10 +12,6 @@ import java.util.List;
 
 public class PaymentRepository {
 
-    public void processPayment(int billId, BigDecimal amount, PaymentType type) {
-        processPayment(billId, amount, type, null);
-    }
-
     public void processPayment(int billId, BigDecimal amount, PaymentType type, Integer processedByAccountId) {
         String sql = "INSERT INTO payments (bill_id, creation_date, amount, status, payment_type, processed_by_account_id) VALUES (?, ?, ?, ?, ?, ?)";
         try (Connection conn = DatabaseConnection.getConnection();
@@ -49,28 +45,6 @@ public class PaymentRepository {
         } catch (SQLException e) { e.printStackTrace(); }
     }
 
-    public List<Payment> findByBillId(int billId) {
-        List<Payment> list = new ArrayList<>();
-        String sql = "SELECT * FROM payments WHERE bill_id = ?";
-        try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmt.setInt(1, billId);
-            try (ResultSet rs = pstmt.executeQuery()) {
-                while (rs.next()) {
-                    Payment p = new Payment();
-                    p.setId(rs.getInt("id"));
-                    p.setBillId(rs.getInt("bill_id"));
-                    p.setCreationDate(rs.getTimestamp("creation_date").toLocalDateTime());
-                    p.setAmount(rs.getBigDecimal("amount"));
-                    p.setStatus(PaymentStatus.fromInt(rs.getInt("status")));
-                    p.setPaymentType(PaymentType.fromInt(rs.getInt("payment_type")));
-                    list.add(p);
-                }
-            }
-        } catch (SQLException e) { e.printStackTrace(); }
-        return list;
-    }
-
     public BigDecimal getSuccessfulPaidAmount(int billId) {
         String sql = "SELECT COALESCE(SUM(amount), 0) FROM payments WHERE bill_id = ? AND status IN (?, ?)";
         try (Connection conn = DatabaseConnection.getConnection();
@@ -83,21 +57,6 @@ public class PaymentRepository {
             }
         } catch (SQLException e) { e.printStackTrace(); }
         return BigDecimal.ZERO;
-    }
-
-    public boolean hasFailedPayment(int billId) {
-        String sql = "SELECT COUNT(*) FROM payments WHERE bill_id = ? AND status IN (?, ?, ?)";
-        try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmt.setInt(1, billId);
-            pstmt.setInt(2, PaymentStatus.FAILED.getValue());
-            pstmt.setInt(3, PaymentStatus.DECLINED.getValue());
-            pstmt.setInt(4, PaymentStatus.CANCELLED.getValue());
-            try (ResultSet rs = pstmt.executeQuery()) {
-                return rs.next() && rs.getInt(1) > 0;
-            }
-        } catch (SQLException e) { e.printStackTrace(); }
-        return false;
     }
 
     public List<Payment> findByMemberId(int memberId) {

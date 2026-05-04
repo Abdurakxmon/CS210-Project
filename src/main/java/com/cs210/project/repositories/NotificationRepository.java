@@ -38,9 +38,6 @@ public class NotificationRepository {
         return false;
     }
 
-    public int countByMemberId(int memberId) {
-        return countUnreadByMemberId(memberId);
-    }
 
     public int countUnreadByMemberId(int memberId) {
         ensureReadColumn();

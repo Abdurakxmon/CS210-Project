@@ -22,24 +22,4 @@ public class InsuranceRepository {
             }
         } catch (SQLException e) { e.printStackTrace(); }
     }
-
-    public List<RentalInsurance> findByReservationId(int resId) {
-        List<RentalInsurance> list = new ArrayList<>();
-        String sql = "SELECT * FROM rental_insurances WHERE reservation_id = ?";
-        try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmt.setInt(1, resId);
-            try (ResultSet rs = pstmt.executeQuery()) {
-                while (rs.next()) {
-                    RentalInsurance ins = new RentalInsurance();
-                    ins.setId(rs.getInt("id"));
-                    ins.setReservationId(rs.getInt("reservation_id"));
-                    ins.setInsuranceType(InsuranceType.values()[rs.getInt("insurance_type") - 1]);
-                    ins.setPrice(rs.getBigDecimal("price"));
-                    list.add(ins);
-                }
-            }
-        } catch (SQLException e) { e.printStackTrace(); }
-        return list;
-    }
 }

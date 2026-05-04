@@ -23,11 +23,6 @@ public class ReservationService {
     private final VehicleLogRepository logRepo = new VehicleLogRepository();
     private final CustomerEligibilityService eligibilityService = new CustomerEligibilityService();
 
-    public String createReservation(int memberId, int vehicleId, int pickupLoc, int returnLoc, LocalDateTime dueDate,
-                                    List<InsuranceType> insurances, List<EquipmentType> equipments, List<ServiceType> services) throws Exception {
-        return createReservation(memberId, vehicleId, pickupLoc, returnLoc, LocalDateTime.now().plusDays(1), dueDate,
-                insurances, equipments, services);
-    }
 
     public String createReservation(int memberId, int vehicleId, int pickupLoc, int returnLoc,
                                     LocalDateTime pickupDate, LocalDateTime returnDate,
@@ -172,9 +167,6 @@ public class ReservationService {
         resRepo.delete(resId);
     }
 
-    public void validateCustomerEligibility(int memberId) throws Exception {
-        eligibilityService.validateCustomerEligibility(memberId);
-    }
 
     private BigDecimal insurancePrice(InsuranceType type) {
         return switch (type) {

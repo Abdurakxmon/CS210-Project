@@ -22,24 +22,4 @@ public class ServiceRepository {
             }
         } catch (SQLException e) { e.printStackTrace(); }
     }
-
-    public List<Service> findByReservationId(int resId) {
-        List<Service> list = new ArrayList<>();
-        String sql = "SELECT * FROM services WHERE reservation_id = ?";
-        try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmt.setInt(1, resId);
-            try (ResultSet rs = pstmt.executeQuery()) {
-                while (rs.next()) {
-                    Service s = new Service();
-                    s.setId(rs.getInt("id"));
-                    s.setReservationId(rs.getInt("reservation_id"));
-                    s.setServiceType(ServiceType.values()[rs.getInt("service_type") - 1]);
-                    s.setPrice(rs.getBigDecimal("price"));
-                    list.add(s);
-                }
-            }
-        } catch (SQLException e) { e.printStackTrace(); }
-        return list;
-    }
 }

@@ -24,7 +24,7 @@ public class MemberRepository {
                      "WHERE a.username = ?";
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmt.setString(1, username);
+             pstmt.setString(1, username);
 
             try (ResultSet rs = pstmt.executeQuery()) {
                 if (rs.next()) {
@@ -220,18 +220,6 @@ public class MemberRepository {
         }
     }
 
-    public int findAccountIdByMemberId(int memberId) {
-        String sql = "SELECT account_id FROM members WHERE id = ?";
-        try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmt.setInt(1, memberId);
-            try (ResultSet rs = pstmt.executeQuery()) {
-                if (rs.next()) return rs.getInt("account_id");
-            }
-        } catch (SQLException e) { e.printStackTrace(); }
-        return 0;
-    }
-
     public List<Member> findAllMembers() {
         List<Member> list = new ArrayList<>();
         String sql = "SELECT m.*, p.name FROM members m " +
@@ -245,8 +233,6 @@ public class MemberRepository {
                 m.setId(rs.getInt("id"));
                 m.setAccountId(rs.getInt("account_id"));
                 m.setDriverLicenseNumber(rs.getString("driver_license_number"));
-                // We'll use a transient field for the name if available, or just use toString
-                // For simplicity in the UI, I'll assume Member.toString() or a custom mapper
                 list.add(m);
             }
         } catch (SQLException e) { e.printStackTrace(); }

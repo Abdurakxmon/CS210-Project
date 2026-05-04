@@ -117,16 +117,6 @@ public class VehicleRepository {
         } catch (SQLException e) { e.printStackTrace(); }
     }
 
-    public void updateMileage(int vehicleId, int newMileage) {
-        String sql = "UPDATE vehicles SET mileage = ? WHERE id = ?";
-        try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmt.setInt(1, newMileage);
-            pstmt.setInt(2, vehicleId);
-            pstmt.executeUpdate();
-        } catch (SQLException e) { e.printStackTrace(); }
-    }
-
     public void updateReturnState(int vehicleId, int newMileage, int fuelLevel, Integer parkingStallId, VehicleStatus status) {
         String sql = "UPDATE vehicles SET mileage = ?, fuel_level = ?, parking_stall_id = ?, status = ? WHERE id = ?";
         try (Connection conn = DatabaseConnection.getConnection();
@@ -263,50 +253,6 @@ public class VehicleRepository {
         return v;
     }
 
-    public List<Vehicle> searchAvailableVehicles(Integer pickupLocationId, Integer returnLocationId,
-                                                 LocalDateTime pickupDate, LocalDateTime returnDate,
-                                                 VehicleType vehicleType, Double minPrice, Double maxPrice,
-                                                 TransmissionType transmissionType, FuelType fuelType,
-                                                 Integer passengerCapacity) {
-        List<Vehicle> vehicles = new ArrayList<>();
-        StringBuilder sql = new StringBuilder("SELECT v.*, b.barcode, l.name as loc_name, s.name as sys_name, ps.stall_number FROM vehicles v " +
-                "JOIN barcodes b ON v.barcode_id = b.id " +
-                "JOIN locations l ON v.location_id = l.id " +
-                "JOIN car_rental_systems s ON l.system_id = s.id " +
-                "LEFT JOIN parking_stalls ps ON v.parking_stall_id = ps.id " +
-                "WHERE v.is_active = TRUE AND v.status IN (1, 2) " +
-                "AND NOT EXISTS (SELECT 1 FROM vehicle_reservations r WHERE r.vehicle_id = v.id " +
-                "AND r.status IN (1, 2, 3, 7, 8) " +
-                "AND ? < r.due_date AND ? > r.pickup_date)");
-
-        if (pickupLocationId != null) sql.append(" AND v.location_id = ?");
-        if (vehicleType != null) sql.append(" AND v.vehicle_type = ?");
-        if (minPrice != null) sql.append(" AND v.price_per_day >= ?");
-        if (maxPrice != null) sql.append(" AND v.price_per_day <= ?");
-        if (transmissionType != null) sql.append(" AND v.transmission_type = ?");
-        if (fuelType != null) sql.append(" AND v.fuel_type = ?");
-        if (passengerCapacity != null) sql.append(" AND v.passenger_capacity >= ?");
-        sql.append(" ORDER BY v.price_per_day, v.make, v.model");
-
-        try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql.toString())) {
-            int idx = 1;
-            pstmt.setTimestamp(idx++, Timestamp.valueOf(pickupDate));
-            pstmt.setTimestamp(idx++, Timestamp.valueOf(returnDate));
-            if (pickupLocationId != null) pstmt.setInt(idx++, pickupLocationId);
-            if (vehicleType != null) pstmt.setInt(idx++, vehicleType.getValue());
-            if (minPrice != null) pstmt.setDouble(idx++, minPrice);
-            if (maxPrice != null) pstmt.setDouble(idx++, maxPrice);
-            if (transmissionType != null) pstmt.setInt(idx++, transmissionType.getValue());
-            if (fuelType != null) pstmt.setInt(idx++, fuelType.getValue());
-            if (passengerCapacity != null) pstmt.setInt(idx++, passengerCapacity);
-            try (ResultSet rs = pstmt.executeQuery()) {
-                while (rs.next()) vehicles.add(mapResultSetToVehicle(rs));
-            }
-        } catch (SQLException e) { e.printStackTrace(); }
-        return vehicles;
-    }
-
     public boolean isAvailableForDateRange(int vehicleId, LocalDateTime pickupDate, LocalDateTime returnDate, Integer excludingReservationId) {
         String sql = "SELECT COUNT(*) FROM vehicle_reservations WHERE vehicle_id = ? " +
                 "AND status IN (1, 2, 3, 7, 8) AND ? < due_date AND ? > pickup_date" +
@@ -322,32 +268,6 @@ public class VehicleRepository {
             }
         } catch (SQLException e) { e.printStackTrace(); }
         return false;
-    }
-
-    public List<String> getVehicleHistory(int vehicleId) {
-        List<String> history = new ArrayList<>();
-        String sql = "SELECT r.reservation_number, p.name as member_name, r.creation_date as picked_up, " +
-                     "r.return_date, staff_p.name as staff_name FROM vehicle_reservations r " +
-                     "JOIN members m ON r.member_id = m.id " +
-                     "JOIN accounts a ON m.account_id = a.id " +
-                     "JOIN persons p ON a.person_id = p.id " +
-                     "LEFT JOIN accounts staff_a ON r.processed_by_account_id = staff_a.id " +
-                     "LEFT JOIN persons staff_p ON staff_a.person_id = staff_p.id " +
-                     "WHERE r.vehicle_id = ? ORDER BY r.creation_date DESC";
-        try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmt.setInt(1, vehicleId);
-            try (ResultSet rs = pstmt.executeQuery()) {
-                while (rs.next()) {
-                    String staff = rs.getString("staff_name") != null ? rs.getString("staff_name") : "N/A";
-                    String retDate = rs.getTimestamp("return_date") != null ? rs.getTimestamp("return_date").toString() : "Not returned yet";
-                    history.add(String.format("[%s] Member: %s | Pickup: %s | Return: %s | Staff: %s", 
-                        rs.getString("reservation_number"), rs.getString("member_name"), 
-                        rs.getTimestamp("picked_up"), retDate, staff));
-                }
-            }
-        } catch (SQLException e) { e.printStackTrace(); }
-        return history;
     }
 
     public List<com.cs210.project.models.VehicleReservation> getVehicleHistoryObjects(int vehicleId) {

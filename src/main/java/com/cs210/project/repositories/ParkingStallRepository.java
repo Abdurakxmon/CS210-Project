@@ -37,20 +37,6 @@ public class ParkingStallRepository {
         return stalls;
     }
 
-    public List<ParkingStall> findAllByLocation(int locationId) {
-        List<ParkingStall> stalls = new ArrayList<>();
-        String sql = "SELECT * FROM parking_stalls WHERE location_id = ?";
-        try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmt.setInt(1, locationId);
-            try (ResultSet rs = pstmt.executeQuery()) {
-                while (rs.next()) {
-                    stalls.add(mapStall(rs));
-                }
-            }
-        } catch (SQLException e) { e.printStackTrace(); }
-        return stalls;
-    }
 
     public ParkingStall findById(int id) {
         String sql = "SELECT * FROM parking_stalls WHERE id = ?";

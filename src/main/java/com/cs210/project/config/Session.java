@@ -2,7 +2,7 @@ package com.cs210.project.config;
 
 import com.cs210.project.models.Account;
 import com.cs210.project.models.Member;
-
+import com.cs210.project.constants.Enums;
 /**
  * Session class to track the currently logged-in user and their role.
  */
@@ -33,18 +33,18 @@ public class Session {
     }
 
     public static boolean isMember() {
-        return isLoggedIn() && currentAccount.getRoleType() == com.cs210.project.constants.Enums.RoleType.MEMBER;
+        return isLoggedIn() && currentAccount.getRoleType() == Enums.RoleType.MEMBER;
     }
 
     public static boolean isReceptionist() {
-        return isLoggedIn() && currentAccount.getRoleType() == com.cs210.project.constants.Enums.RoleType.RECEPTIONIST;
+        return isLoggedIn() && currentAccount.getRoleType() == Enums.RoleType.RECEPTIONIST;
     }
 
     public static boolean isSuperAdmin() {
-        return isLoggedIn() && currentAccount.getRoleType() == com.cs210.project.constants.Enums.RoleType.SUPER_ADMIN;
+        return isLoggedIn() && currentAccount.getRoleType() == Enums.RoleType.SUPER_ADMIN;
     }
 
     public static boolean isWorker() {
-        return isLoggedIn() && currentAccount.getRoleType() == com.cs210.project.constants.Enums.RoleType.WORKER;
+        return isLoggedIn() && currentAccount.getRoleType() == Enums.RoleType.WORKER;
     }
 }

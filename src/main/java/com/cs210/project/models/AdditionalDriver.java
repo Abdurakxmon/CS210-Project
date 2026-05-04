@@ -13,7 +13,6 @@ public class AdditionalDriver {
     public int getReservationId() { return reservationId; }
     public void setReservationId(int reservationId) { this.reservationId = reservationId; }
     public int getPersonId() { return personId; }
-    public void setPersonId(int personId) { this.personId = personId; }
     public String getDriverId() { return driverId; }
     public void setDriverId(String driverId) { this.driverId = driverId; }
 }

@@ -28,36 +28,6 @@ public class AccountRepository {
         return accounts;
     }
 
-    public void updateRole(int accountId, RoleType role) {
-        String sql = "UPDATE accounts SET role_type = ? WHERE id = ?";
-        try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmt.setInt(1, role.getValue());
-            pstmt.setInt(2, accountId);
-            pstmt.executeUpdate();
-        } catch (SQLException e) { e.printStackTrace(); }
-    }
-
-    public void updateStatus(int accountId, AccountStatus status) {
-        String sql = "UPDATE accounts SET status = ? WHERE id = ?";
-        try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmt.setInt(1, status.getValue());
-            pstmt.setInt(2, accountId);
-            pstmt.executeUpdate();
-        } catch (SQLException e) { e.printStackTrace(); }
-    }
-
-    public void resetPassword(int accountId, String newPassword) {
-        String sql = "UPDATE accounts SET password_hash = ? WHERE id = ?";
-        try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmt.setString(1, BCrypt.hashpw(newPassword, BCrypt.gensalt()));
-            pstmt.setInt(2, accountId);
-            pstmt.executeUpdate();
-        } catch (SQLException e) { e.printStackTrace(); }
-    }
-
     public boolean create(Person p, String username, String password, RoleType role, AccountStatus status) {
         Connection conn = null;
         try {
@@ -67,10 +37,7 @@ public class AccountRepository {
             conn = DatabaseConnection.getConnection();
             conn.setAutoCommit(false);
 
-            boolean hasBirthDate = hasColumn(conn, "persons", "birth_date");
-            String sqlPerson = hasBirthDate
-                    ? "INSERT INTO persons (name, email, phone, street_address, city, state, zipcode, country, birth_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
-                    : "INSERT INTO persons (name, email, phone, street_address, city, state, zipcode, country) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+            String sqlPerson = "INSERT INTO persons (name, email, phone, street_address, city, state, zipcode, country, birth_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
             PreparedStatement pstmtPerson = conn.prepareStatement(sqlPerson, Statement.RETURN_GENERATED_KEYS);
             pstmtPerson.setString(1, p.getName());
             pstmtPerson.setString(2, p.getEmail());
@@ -80,9 +47,7 @@ public class AccountRepository {
             pstmtPerson.setString(6, p.getState());
             pstmtPerson.setString(7, p.getZipcode());
             pstmtPerson.setString(8, p.getCountry());
-            if (hasBirthDate) {
-                if (p.getBirthDate() != null) pstmtPerson.setDate(9, Date.valueOf(p.getBirthDate())); else pstmtPerson.setNull(9, Types.DATE);
-            }
+            pstmtPerson.setDate(9, Date.valueOf(p.getBirthDate()));
             pstmtPerson.executeUpdate();
             
             int personId;
@@ -114,10 +79,7 @@ public class AccountRepository {
         String sqlAccount = "UPDATE accounts SET username = ?, status = ?, role_type = ? WHERE id = ?";
         try (Connection conn = DatabaseConnection.getConnection()) {
             conn.setAutoCommit(false);
-            boolean hasBirthDate = hasColumn(conn, "persons", "birth_date");
-            String sqlPerson = hasBirthDate
-                    ? "UPDATE persons SET name = ?, email = ?, phone = ?, street_address = ?, city = ?, state = ?, zipcode = ?, country = ?, birth_date = ? WHERE id = ?"
-                    : "UPDATE persons SET name = ?, email = ?, phone = ?, street_address = ?, city = ?, state = ?, zipcode = ?, country = ? WHERE id = ?";
+            String sqlPerson = "UPDATE persons SET name = ?, email = ?, phone = ?, street_address = ?, city = ?, state = ?, zipcode = ?, country = ?, birth_date = ? WHERE id = ?";
             try (PreparedStatement pstmtAccount = conn.prepareStatement(sqlAccount);
                  PreparedStatement pstmtPerson = conn.prepareStatement(sqlPerson)) {
                 
@@ -135,12 +97,8 @@ public class AccountRepository {
                 pstmtPerson.setString(6, a.getPerson().getState());
                 pstmtPerson.setString(7, a.getPerson().getZipcode());
                 pstmtPerson.setString(8, a.getPerson().getCountry());
-                if (hasBirthDate) {
-                    if (a.getPerson().getBirthDate() != null) pstmtPerson.setDate(9, Date.valueOf(a.getPerson().getBirthDate())); else pstmtPerson.setNull(9, Types.DATE);
-                    pstmtPerson.setInt(10, a.getPersonId());
-                } else {
-                    pstmtPerson.setInt(9, a.getPersonId());
-                }
+                pstmtPerson.setDate(9, Date.valueOf(a.getPerson().getBirthDate()));
+                pstmtPerson.setInt(10, a.getPersonId());
                 pstmtPerson.executeUpdate();
 
                 conn.commit();
@@ -186,12 +144,7 @@ public class AccountRepository {
         person.setState(rs.getString("state"));
         person.setZipcode(rs.getString("zipcode"));
         person.setCountry(rs.getString("country"));
-        try {
-            Date birthDate = rs.getDate("birth_date");
-            if (birthDate != null) person.setBirthDate(birthDate.toLocalDate());
-        } catch (SQLException ignored) {
-            // Old schema may not have birth_date.
-        }
+        person.setBirthDate(rs.getDate("birth_date").toLocalDate());
         account.setPerson(person);
         return account;
     }
