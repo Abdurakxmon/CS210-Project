@@ -41,7 +41,7 @@ public class ReservationsListView extends VBox {
     private final ParkingStallRepository stallRepo = new ParkingStallRepository();
     private final BillRepository billRepo = new BillRepository();
     private final PaymentRepository paymentRepo = new PaymentRepository();
-    
+
     private final TableView<VehicleReservation> table = new TableView<>();
     private final String highlightReservationNumber;
     private final String feedbackMessage;
@@ -93,7 +93,8 @@ public class ReservationsListView extends VBox {
         feedbackLabel.setWrapText(true);
         feedbackLabel.setVisible(feedbackMessage != null && !feedbackMessage.isBlank());
         feedbackLabel.setManaged(feedbackLabel.isVisible());
-        feedbackLabel.setStyle("-fx-background-color: #e8f7ee; -fx-text-fill: #17633a; -fx-padding: 10 12; -fx-background-radius: 8; -fx-font-weight: bold;");
+        feedbackLabel.setStyle(
+                "-fx-background-color: #e8f7ee; -fx-text-fill: #17633a; -fx-padding: 10 12; -fx-background-radius: 8; -fx-font-weight: bold;");
 
         GridPane filterGrid = createBackendFilterGrid();
 
@@ -142,7 +143,8 @@ public class ReservationsListView extends VBox {
                 javafx.scene.input.ClipboardContent content = new javafx.scene.input.ClipboardContent();
                 content.putString(selected.getReservationNumber());
                 clipboard.setContent(content);
-                new Alert(Alert.AlertType.INFORMATION, "Reservation number " + selected.getReservationNumber() + " copied to clipboard!").show();
+                new Alert(Alert.AlertType.INFORMATION,
+                        "Reservation number " + selected.getReservationNumber() + " copied to clipboard!").show();
             }
         });
         copyBtn.getStyleClass().add("backend-secondary-btn");
@@ -157,7 +159,8 @@ public class ReservationsListView extends VBox {
             editBtn.getStyleClass().add("backend-secondary-btn");
             editBtn.setOnAction(e -> {
                 VehicleReservation selected = table.getSelectionModel().getSelectedItem();
-                if (selected != null) showReservationDialog(selected);
+                if (selected != null)
+                    showReservationDialog(selected);
             });
 
             Button deleteBtn = new Button("Delete Selected");
@@ -165,7 +168,9 @@ public class ReservationsListView extends VBox {
             deleteBtn.setOnAction(e -> {
                 VehicleReservation selected = table.getSelectionModel().getSelectedItem();
                 if (selected != null) {
-                    Alert confirm = new Alert(Alert.AlertType.CONFIRMATION, "Delete reservation " + selected.getReservationNumber() + "?", ButtonType.YES, ButtonType.NO);
+                    Alert confirm = new Alert(Alert.AlertType.CONFIRMATION,
+                            "Delete reservation " + selected.getReservationNumber() + "?", ButtonType.YES,
+                            ButtonType.NO);
                     confirm.showAndWait().ifPresent(response -> {
                         if (response == ButtonType.YES) {
                             try {
@@ -186,17 +191,21 @@ public class ReservationsListView extends VBox {
         returnBtn.getStyleClass().add("backend-primary-btn");
         returnBtn.setOnAction(e -> {
             VehicleReservation selected = table.getSelectionModel().getSelectedItem();
-            if (selected == null) return;
+            if (selected == null)
+                return;
 
             if (Session.isMember()) {
                 // One-click return for members
-                Alert confirm = new Alert(Alert.AlertType.CONFIRMATION, "Initiate return for vehicle " + selected.getVehiclePlate() + "?", ButtonType.YES, ButtonType.NO);
+                Alert confirm = new Alert(Alert.AlertType.CONFIRMATION,
+                        "Initiate return for vehicle " + selected.getVehiclePlate() + "?", ButtonType.YES,
+                        ButtonType.NO);
                 confirm.showAndWait().ifPresent(response -> {
                     if (response == ButtonType.YES) {
                         try {
                             rentalService.initiateReturn(selected.getReservationNumber());
                             loadData();
-                            new Alert(Alert.AlertType.INFORMATION, "Return initiated. A worker will inspect the vehicle shortly.").show();
+                            new Alert(Alert.AlertType.INFORMATION,
+                                    "Return initiated. A worker will inspect the vehicle shortly.").show();
                         } catch (Exception ex) {
                             new Alert(Alert.AlertType.ERROR, ex.getMessage()).show();
                         }
@@ -215,7 +224,8 @@ public class ReservationsListView extends VBox {
         detailsBtn.getStyleClass().add("backend-secondary-btn");
         detailsBtn.setOnAction(e -> {
             VehicleReservation selected = table.getSelectionModel().getSelectedItem();
-            if (selected != null) showDetailsDialog(selected);
+            if (selected != null)
+                showDetailsDialog(selected);
         });
 
         if (!Session.isWorker()) {
@@ -224,13 +234,20 @@ public class ReservationsListView extends VBox {
             cancelBtn.setOnAction(e -> {
                 VehicleReservation selected = table.getSelectionModel().getSelectedItem();
                 if (selected != null) {
-                    try {
-                        resService.cancelReservation(selected.getId());
-                        loadData();
-                    } catch (Exception ex) {
-                        Alert alert = new Alert(Alert.AlertType.ERROR, ex.getMessage());
-                        alert.show();
-                    }
+                    Alert confirm = new Alert(Alert.AlertType.CONFIRMATION,
+                            "Cancel selected reservation " + selected.getReservationNumber() + "?\n\n" +
+                                    "A cancellation fee of $10.00 will be applied.",
+                            ButtonType.YES, ButtonType.NO);
+                    confirm.showAndWait().ifPresent(response -> {
+                        if (response == ButtonType.YES) {
+                            try {
+                                resService.cancelReservation(selected.getId());
+                                loadData();
+                            } catch (Exception ex) {
+                                new Alert(Alert.AlertType.ERROR, ex.getMessage()).show();
+                            }
+                        }
+                    });
                 }
             });
             actions.getChildren().add(cancelBtn);
@@ -354,15 +371,33 @@ public class ReservationsListView extends VBox {
         ComboBox<Location> returnCombo = new ComboBox<>(FXCollections.observableArrayList(locationRepo.findAll()));
         DatePicker dueDatePicker = new DatePicker();
         DatePicker pickupDatePicker = new DatePicker();
-        ComboBox<ReservationStatus> statusCombo = new ComboBox<>(FXCollections.observableArrayList(ReservationStatus.values()));
+        ComboBox<ReservationStatus> statusCombo = new ComboBox<>(
+                FXCollections.observableArrayList(ReservationStatus.values()));
 
         if (res != null) {
             // Set initial values for editing
-            for (Member m : memberCombo.getItems()) if (m.getId() == res.getMemberId()) { memberCombo.setValue(m); break; }
-            for (Vehicle v : vehicleCombo.getItems()) if (v.getId() == res.getVehicleId()) { vehicleCombo.setValue(v); break; }
-            for (Location l : pickupCombo.getItems()) if (l.getId() == res.getPickupLocationId()) { pickupCombo.setValue(l); break; }
-            for (Location l : returnCombo.getItems()) if (l.getId() == res.getReturnLocationId()) { returnCombo.setValue(l); break; }
-            pickupDatePicker.setValue(res.getPickupDate() != null ? res.getPickupDate().toLocalDate() : res.getCreationDate().toLocalDate());
+            for (Member m : memberCombo.getItems())
+                if (m.getId() == res.getMemberId()) {
+                    memberCombo.setValue(m);
+                    break;
+                }
+            for (Vehicle v : vehicleCombo.getItems())
+                if (v.getId() == res.getVehicleId()) {
+                    vehicleCombo.setValue(v);
+                    break;
+                }
+            for (Location l : pickupCombo.getItems())
+                if (l.getId() == res.getPickupLocationId()) {
+                    pickupCombo.setValue(l);
+                    break;
+                }
+            for (Location l : returnCombo.getItems())
+                if (l.getId() == res.getReturnLocationId()) {
+                    returnCombo.setValue(l);
+                    break;
+                }
+            pickupDatePicker.setValue(res.getPickupDate() != null ? res.getPickupDate().toLocalDate()
+                    : res.getCreationDate().toLocalDate());
             dueDatePicker.setValue(res.getDueDate().toLocalDate());
             statusCombo.setValue(res.getStatus());
         } else {
@@ -388,23 +423,22 @@ public class ReservationsListView extends VBox {
         Button saveBtn = new Button("Save");
         saveBtn.setOnAction(e -> {
             try {
-                if (memberCombo.getValue() == null || vehicleCombo.getValue() == null || 
-                    pickupCombo.getValue() == null || returnCombo.getValue() == null || pickupDatePicker.getValue() == null || dueDatePicker.getValue() == null) {
+                if (memberCombo.getValue() == null || vehicleCombo.getValue() == null ||
+                        pickupCombo.getValue() == null || returnCombo.getValue() == null
+                        || pickupDatePicker.getValue() == null || dueDatePicker.getValue() == null) {
                     throw new Exception("Please fill all fields.");
                 }
 
                 if (res == null) {
                     resService.createReservation(
-                        memberCombo.getValue().getId(),
-                        vehicleCombo.getValue().getId(),
-                        pickupCombo.getValue().getId(),
-                        returnCombo.getValue().getId(),
-                        pickupDatePicker.getValue().atTime(10, 0),
-                        dueDatePicker.getValue().atTime(12, 0),
-                        new java.util.ArrayList<>(),
-                        new java.util.ArrayList<>(),
-                        new java.util.ArrayList<>()
-                    );
+                            memberCombo.getValue().getId(),
+                            vehicleCombo.getValue().getId(),
+                            pickupCombo.getValue().getId(),
+                            returnCombo.getValue().getId(),
+                            pickupDatePicker.getValue().atTime(10, 0),
+                            dueDatePicker.getValue().atTime(12, 0),
+                            new java.util.ArrayList<>(),
+                            new java.util.ArrayList<>());
                 } else {
                     res.setMemberId(memberCombo.getValue().getId());
                     res.setVehicleId(vehicleCombo.getValue().getId());
@@ -461,9 +495,11 @@ public class ReservationsListView extends VBox {
         addModalRow(grid, "License plate", res.getVehiclePlate(), r++);
         addModalRow(grid, "Pickup", formatDate(res.getPickupDate()), r++);
         addModalRow(grid, "Due", formatDate(res.getDueDate()), r++);
-        addModalRow(grid, "Pickup location", res.getPickupLocationName() != null ? res.getPickupLocationName() : String.valueOf(res.getPickupLocationId()), r++);
-        addModalRow(grid, "Return location", res.getReturnLocationName() != null ? res.getReturnLocationName() : String.valueOf(res.getReturnLocationId()), r++);
-        
+        addModalRow(grid, "Pickup location", res.getPickupLocationName() != null ? res.getPickupLocationName()
+                : String.valueOf(res.getPickupLocationId()), r++);
+        addModalRow(grid, "Return location", res.getReturnLocationName() != null ? res.getReturnLocationName()
+                : String.valueOf(res.getReturnLocationId()), r++);
+
         Bill bill = billRepo.findByReservationId(res.getId());
         String costStr = "N/A";
         String paidStr = "N/A";
@@ -562,7 +598,8 @@ public class ReservationsListView extends VBox {
         addInspectionRow(grid, "Notes", notesArea, row++);
 
         if (stallCombo.getItems().isEmpty()) {
-            Label noStalls = new Label("No free stalls at this return location. The vehicle can still be completed without a stall.");
+            Label noStalls = new Label(
+                    "No free stalls at this return location. The vehicle can still be completed without a stall.");
             noStalls.setWrapText(true);
             noStalls.setStyle("-fx-text-fill: #b45309;");
             grid.add(noStalls, 1, row++);
@@ -574,8 +611,10 @@ public class ReservationsListView extends VBox {
             try {
                 int mileage = Integer.parseInt(mileageField.getText().trim());
                 int fuelLevel = Integer.parseInt(fuelLevelField.getText().trim());
-                if (mileage < 0) throw new Exception("Mileage cannot be negative.");
-                if (fuelLevel < 0 || fuelLevel > 100) throw new Exception("Fuel level must be between 0 and 100.");
+                if (mileage < 0)
+                    throw new Exception("Mileage cannot be negative.");
+                if (fuelLevel < 0 || fuelLevel > 100)
+                    throw new Exception("Fuel level must be between 0 and 100.");
                 rentalService.returnVehicle(
                         reservation.getReservationNumber(),
                         Session.getAccount().getId(),
@@ -620,11 +659,12 @@ public class ReservationsListView extends VBox {
         } else {
             data = resService.getAllReservations();
             if (Session.isWorker()) {
-                // Keep newly reviewed cars visible so the worker sees the result after completing inspection.
+                // Keep newly reviewed cars visible so the worker sees the result after
+                // completing inspection.
                 data = data.stream()
-                    .filter(res -> res.getStatus() == ReservationStatus.WAITING_FOR_INSPECTION
-                            || res.getStatus() == ReservationStatus.COMPLETED)
-                    .toList();
+                        .filter(res -> res.getStatus() == ReservationStatus.WAITING_FOR_INSPECTION
+                                || res.getStatus() == ReservationStatus.COMPLETED)
+                        .toList();
             }
             backendReservations = data;
             applyBackendReservationFilters();
@@ -647,8 +687,10 @@ public class ReservationsListView extends VBox {
         List<VehicleReservation> filtered = backendReservations.stream()
                 .filter(reservation -> matchesBackendSearch(reservation, query))
                 .filter(reservation -> status == null || reservation.getStatus() == status)
-                .filter(reservation -> pickupFrom == null || (reservation.getPickupDate() != null && !reservation.getPickupDate().toLocalDate().isBefore(pickupFrom)))
-                .filter(reservation -> pickupTo == null || (reservation.getPickupDate() != null && !reservation.getPickupDate().toLocalDate().isAfter(pickupTo)))
+                .filter(reservation -> pickupFrom == null || (reservation.getPickupDate() != null
+                        && !reservation.getPickupDate().toLocalDate().isBefore(pickupFrom)))
+                .filter(reservation -> pickupTo == null || (reservation.getPickupDate() != null
+                        && !reservation.getPickupDate().toLocalDate().isAfter(pickupTo)))
                 .toList();
 
         table.setItems(FXCollections.observableArrayList(filtered));
@@ -674,9 +716,12 @@ public class ReservationsListView extends VBox {
         if (backendSummaryLabel == null || reservations == null) {
             return;
         }
-        long confirmed = reservations.stream().filter(reservation -> reservation.getStatus() == ReservationStatus.CONFIRMED).count();
-        long active = reservations.stream().filter(reservation -> reservation.getStatus() == ReservationStatus.PENDING).count();
-        long waitingInspection = reservations.stream().filter(reservation -> reservation.getStatus() == ReservationStatus.WAITING_FOR_INSPECTION).count();
+        long confirmed = reservations.stream()
+                .filter(reservation -> reservation.getStatus() == ReservationStatus.CONFIRMED).count();
+        long active = reservations.stream().filter(reservation -> reservation.getStatus() == ReservationStatus.PENDING)
+                .count();
+        long waitingInspection = reservations.stream()
+                .filter(reservation -> reservation.getStatus() == ReservationStatus.WAITING_FOR_INSPECTION).count();
         backendSummaryLabel.setText(reservations.size() + " reservations · " + confirmed + " confirmed · "
                 + active + " active · " + waitingInspection + " waiting inspection");
     }
@@ -688,7 +733,8 @@ public class ReservationsListView extends VBox {
     private void populateMemberCards(List<VehicleReservation> reservations) {
         memberCards.getChildren().clear();
         int activeCount = (int) reservations.stream()
-                .filter(res -> res.getStatus() != ReservationStatus.CANCELLED && res.getStatus() != ReservationStatus.COMPLETED)
+                .filter(res -> res.getStatus() != ReservationStatus.CANCELLED
+                        && res.getStatus() != ReservationStatus.COMPLETED)
                 .count();
         memberSummaryLabel.setText(reservations.size() + (reservations.size() == 1 ? " reservation" : " reservations")
                 + " · " + activeCount + " active");
@@ -699,7 +745,8 @@ public class ReservationsListView extends VBox {
             empty.setAlignment(Pos.CENTER);
             Label emptyTitle = new Label("No reservations yet");
             emptyTitle.getStyleClass().add("reservations-empty-title");
-            Label emptyBody = new Label("Choose an available automobile and confirm your pickup details to create one.");
+            Label emptyBody = new Label(
+                    "Choose an available automobile and confirm your pickup details to create one.");
             emptyBody.getStyleClass().add("reservations-empty-body");
             empty.getChildren().addAll(emptyTitle, emptyBody);
             memberCards.getChildren().add(empty);
@@ -714,15 +761,18 @@ public class ReservationsListView extends VBox {
     private VBox createMemberReservationCard(VehicleReservation reservation) {
         VBox card = new VBox(12);
         card.getStyleClass().add("reservation-card");
-        if (highlightReservationNumber != null && highlightReservationNumber.equals(reservation.getReservationNumber())) {
+        if (highlightReservationNumber != null
+                && highlightReservationNumber.equals(reservation.getReservationNumber())) {
             card.getStyleClass().add("reservation-card-highlight");
         }
 
         Bill bill = billRepo.findByReservationId(reservation.getId());
         BigDecimal total = bill != null ? bill.getTotalAmount() : BigDecimal.valueOf(reservation.getAmount());
-        BigDecimal paid = bill != null ? paymentRepo.getSuccessfulPaidAmount(bill.getId()) : BigDecimal.valueOf(reservation.getPaidAmount());
+        BigDecimal paid = bill != null ? paymentRepo.getSuccessfulPaidAmount(bill.getId())
+                : BigDecimal.valueOf(reservation.getPaidAmount());
         BigDecimal balance = total.subtract(paid);
-        if (balance.compareTo(BigDecimal.ZERO) < 0) balance = BigDecimal.ZERO;
+        if (balance.compareTo(BigDecimal.ZERO) < 0)
+            balance = BigDecimal.ZERO;
 
         HBox header = new HBox(14);
         header.setAlignment(Pos.TOP_LEFT);
@@ -744,16 +794,18 @@ public class ReservationsListView extends VBox {
         details.getChildren().addAll(
                 createDetailBlock("Pickup", formatDate(reservation.getPickupDate())),
                 createDetailBlock("Return", formatDate(reservation.getDueDate())),
-                createDetailBlock("Location", reservation.getPickupLocationName() != null ? reservation.getPickupLocationName() : "Assigned"),
+                createDetailBlock("Location",
+                        reservation.getPickupLocationName() != null ? reservation.getPickupLocationName() : "Assigned"),
                 createDetailBlock("Total", String.format("$%.2f", total)),
                 createDetailBlock("Paid", String.format("$%.2f", paid)),
-                createDetailBlock("Balance", String.format("$%.2f", balance))
-        );
+                createDetailBlock("Balance", String.format("$%.2f", balance)));
 
         Label feeNotice = new Label("Inspection fees were added. Please pay the remaining balance.");
         feeNotice.setWrapText(true);
-        feeNotice.setStyle("-fx-background-color: #fff7ed; -fx-text-fill: #9a3412; -fx-padding: 10 12; -fx-background-radius: 8;");
-        feeNotice.setVisible(balance.compareTo(BigDecimal.ZERO) > 0 && reservation.getStatus() == ReservationStatus.COMPLETED);
+        feeNotice.setStyle(
+                "-fx-background-color: #fff7ed; -fx-text-fill: #9a3412; -fx-padding: 10 12; -fx-background-radius: 8;");
+        feeNotice.setVisible(
+                balance.compareTo(BigDecimal.ZERO) > 0 && reservation.getStatus() == ReservationStatus.COMPLETED);
         feeNotice.setManaged(feeNotice.isVisible());
 
         HBox actions = new HBox(10);
@@ -793,7 +845,8 @@ public class ReservationsListView extends VBox {
 
         if (reservation.getVehicleImagePath() != null && !reservation.getVehicleImagePath().isBlank()) {
             try {
-                ImageView imageView = new ImageView(new Image(reservation.getVehicleImagePath(), width, height, true, true, true));
+                ImageView imageView = new ImageView(
+                        new Image(reservation.getVehicleImagePath(), width, height, true, true, true));
                 imageView.setFitWidth(width);
                 imageView.setFitHeight(height);
                 imageView.setPreserveRatio(true);
@@ -883,9 +936,11 @@ public class ReservationsListView extends VBox {
                         throw new Exception("Payment amount must be greater than $0.00.");
                     }
                     if (amount.compareTo(remaining) > 0) {
-                        throw new Exception(String.format("Payment cannot exceed remaining balance of $%.2f.", remaining));
+                        throw new Exception(
+                                String.format("Payment cannot exceed remaining balance of $%.2f.", remaining));
                     }
-                    paymentRepo.processPayment(bill.getId(), amount, typeCombo.getValue(), Session.getAccount().getId());
+                    paymentRepo.processPayment(bill.getId(), amount, typeCombo.getValue(),
+                            Session.getAccount().getId());
                     new Alert(Alert.AlertType.INFORMATION, "Payment processed successfully.").show();
                     loadData();
                 } catch (Exception ex) {
@@ -933,7 +988,8 @@ public class ReservationsListView extends VBox {
         title.getStyleClass().add("reservation-modal-title");
         Label number = new Label(reservation.getReservationNumber());
         number.getStyleClass().add("reservation-modal-code");
-        Label body = new Label(reservation.getVehicleMake() + " " + reservation.getVehicleModel() + " is ready to reference at pickup or support.");
+        Label body = new Label(reservation.getVehicleMake() + " " + reservation.getVehicleModel()
+                + " is ready to reference at pickup or support.");
         body.getStyleClass().add("reservation-modal-body");
         body.setWrapText(true);
         Button close = new Button("Close");
@@ -946,7 +1002,10 @@ public class ReservationsListView extends VBox {
     }
 
     private void cancelReservation(VehicleReservation reservation) {
-        Alert confirm = new Alert(Alert.AlertType.CONFIRMATION, "Cancel reservation " + reservation.getReservationNumber() + "?", ButtonType.YES, ButtonType.NO);
+        Alert confirm = new Alert(Alert.AlertType.CONFIRMATION,
+                "Cancel reservation " + reservation.getReservationNumber() + "?\n\n" +
+                        "A cancellation fee of $10.00 will be applied, and all other charges will be removed.",
+                ButtonType.YES, ButtonType.NO);
         confirm.showAndWait().ifPresent(response -> {
             if (response == ButtonType.YES) {
                 try {
@@ -960,13 +1019,15 @@ public class ReservationsListView extends VBox {
     }
 
     private void initiateMemberReturn(VehicleReservation reservation) {
-        Alert confirm = new Alert(Alert.AlertType.CONFIRMATION, "Initiate return for vehicle " + reservation.getVehiclePlate() + "?", ButtonType.YES, ButtonType.NO);
+        Alert confirm = new Alert(Alert.AlertType.CONFIRMATION,
+                "Initiate return for vehicle " + reservation.getVehiclePlate() + "?", ButtonType.YES, ButtonType.NO);
         confirm.showAndWait().ifPresent(response -> {
             if (response == ButtonType.YES) {
                 try {
                     rentalService.initiateReturn(reservation.getReservationNumber());
                     loadData();
-                    new Alert(Alert.AlertType.INFORMATION, "Return initiated. A worker will inspect the vehicle shortly.").show();
+                    new Alert(Alert.AlertType.INFORMATION,
+                            "Return initiated. A worker will inspect the vehicle shortly.").show();
                 } catch (Exception ex) {
                     new Alert(Alert.AlertType.ERROR, ex.getMessage()).show();
                 }

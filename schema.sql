@@ -121,13 +121,6 @@ CREATE TABLE IF NOT EXISTS receptionists (
     FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
--- 11. barcode_readers
-CREATE TABLE IF NOT EXISTS barcode_readers (
-    id INT PRIMARY KEY AUTO_INCREMENT,
-    registered_at DATETIME NOT NULL,
-    active BOOLEAN DEFAULT TRUE
-) ENGINE=InnoDB;
-
 -- 12. vehicle_reservations
 CREATE TABLE IF NOT EXISTS vehicle_reservations (
     id INT PRIMARY KEY AUTO_INCREMENT,
@@ -171,16 +164,6 @@ CREATE TABLE IF NOT EXISTS return_inspections (
     FOREIGN KEY (parking_stall_id) REFERENCES parking_stalls(id)
 ) ENGINE=InnoDB;
 
--- 13. additional_drivers
-CREATE TABLE IF NOT EXISTS additional_drivers (
-    id INT PRIMARY KEY AUTO_INCREMENT,
-    reservation_id INT NOT NULL,
-    person_id INT NOT NULL,
-    driver_id VARCHAR(100),
-    FOREIGN KEY (reservation_id) REFERENCES vehicle_reservations(id) ON DELETE CASCADE,
-    FOREIGN KEY (person_id) REFERENCES persons(id)
-) ENGINE=InnoDB;
-
 -- 14. rental_insurances
 CREATE TABLE IF NOT EXISTS rental_insurances (
     id INT PRIMARY KEY AUTO_INCREMENT,
@@ -195,15 +178,6 @@ CREATE TABLE IF NOT EXISTS equipment (
     id INT PRIMARY KEY AUTO_INCREMENT,
     reservation_id INT NOT NULL,
     equipment_type INT NOT NULL,
-    price DECIMAL(10,2) NOT NULL,
-    FOREIGN KEY (reservation_id) REFERENCES vehicle_reservations(id) ON DELETE CASCADE
-) ENGINE=InnoDB;
-
--- 16. services
-CREATE TABLE IF NOT EXISTS services (
-    id INT PRIMARY KEY AUTO_INCREMENT,
-    reservation_id INT NOT NULL,
-    service_type INT NOT NULL,
     price DECIMAL(10,2) NOT NULL,
     FOREIGN KEY (reservation_id) REFERENCES vehicle_reservations(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
@@ -239,23 +213,6 @@ CREATE TABLE IF NOT EXISTS payments (
     FOREIGN KEY (processed_by_account_id) REFERENCES accounts(id)
 ) ENGINE=InnoDB;
 
--- 20. credit_card_transactions
-CREATE TABLE IF NOT EXISTS credit_card_transactions (
-    id INT PRIMARY KEY AUTO_INCREMENT,
-    payment_id INT UNIQUE NOT NULL,
-    name_on_card VARCHAR(150),
-    FOREIGN KEY (payment_id) REFERENCES payments(id) ON DELETE CASCADE
-) ENGINE=InnoDB;
-
--- 21. check_transactions
-CREATE TABLE IF NOT EXISTS check_transactions (
-    id INT PRIMARY KEY AUTO_INCREMENT,
-    payment_id INT UNIQUE NOT NULL,
-    bank_name VARCHAR(150),
-    check_number VARCHAR(100),
-    FOREIGN KEY (payment_id) REFERENCES payments(id) ON DELETE CASCADE
-) ENGINE=InnoDB;
-
 -- 22. cash_transactions
 CREATE TABLE IF NOT EXISTS cash_transactions (
     id INT PRIMARY KEY AUTO_INCREMENT,
@@ -272,8 +229,5 @@ CREATE TABLE IF NOT EXISTS notifications (
     created_on DATETIME NOT NULL,
     content TEXT NOT NULL,
     is_read BOOLEAN NOT NULL DEFAULT FALSE,
-    address VARCHAR(255) NULL,
-    email VARCHAR(150) NULL,
     FOREIGN KEY (reservation_id) REFERENCES vehicle_reservations(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
-

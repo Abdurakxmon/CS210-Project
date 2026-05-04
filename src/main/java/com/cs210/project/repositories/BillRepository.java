@@ -54,6 +54,16 @@ public class BillRepository {
         } catch (SQLException e) { e.printStackTrace(); }
     }
 
+    public void clearItems(int billId) {
+        String sql = "DELETE FROM bill_items WHERE bill_id = ?";
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setInt(1, billId);
+            pstmt.executeUpdate();
+            updateTotal(billId);
+        } catch (SQLException e) { e.printStackTrace(); }
+    }
+
     public void addItem(int billId, BillItemType type, BigDecimal amount, String serviceName) {
         String sqlItem = "INSERT INTO bill_items (bill_id, item_type, amount, service_name) VALUES (?, ?, ?, ?)";
         String sqlUpdateTotal = "UPDATE bills SET total_amount = total_amount + ? WHERE id = ?";

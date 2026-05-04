@@ -1,7 +1,6 @@
 package com.cs210.project.services;
 
 import com.cs210.project.constants.Enums.*;
-import com.cs210.project.constants.VehicleStatus;
 import com.cs210.project.models.Vehicle;
 import com.cs210.project.models.VehicleReservation;
 import com.cs210.project.repositories.*;
@@ -19,15 +18,12 @@ public class ReservationService {
     private final NotificationRepository notifyRepo = new NotificationRepository();
     private final EquipmentRepository equipmentRepo = new EquipmentRepository();
     private final InsuranceRepository insuranceRepo = new InsuranceRepository();
-    private final ServiceRepository serviceRepo = new ServiceRepository();
     private final VehicleLogRepository logRepo = new VehicleLogRepository();
     private final CustomerEligibilityService eligibilityService = new CustomerEligibilityService();
 
-
     public String createReservation(int memberId, int vehicleId, int pickupLoc, int returnLoc,
-                                    LocalDateTime pickupDate, LocalDateTime returnDate,
-                                    List<InsuranceType> insurances, List<EquipmentType> equipments,
-                                    List<ServiceType> services) throws Exception {
+            LocalDateTime pickupDate, LocalDateTime returnDate,
+            List<InsuranceType> insurances, List<EquipmentType> equipments) throws Exception {
         if (pickupDate == null || returnDate == null || !returnDate.isAfter(pickupDate)) {
             throw new Exception("Pickup and return dates are required, and return must be after pickup.");
         }
@@ -43,12 +39,12 @@ public class ReservationService {
         }
 
         String resNumber = resRepo.generateReservationNumber();
-        
+
         String sql = "INSERT INTO vehicle_reservations (reservation_number, member_id, vehicle_id, creation_date, pickup_date, status, due_date, pickup_location_id, return_location_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
-        
+
         try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
-            
+                PreparedStatement pstmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+
             pstmt.setString(1, resNumber);
             pstmt.setInt(2, memberId);
             pstmt.setInt(3, vehicleId);
@@ -62,19 +58,24 @@ public class ReservationService {
 
             int resId;
             try (ResultSet rs = pstmt.getGeneratedKeys()) {
-                if (rs.next()) resId = rs.getInt(1); else throw new SQLException("Reservation failed");
+                if (rs.next())
+                    resId = rs.getInt(1);
+                else
+                    throw new SQLException("Reservation failed");
             }
 
             // Create Initial Bill
             com.cs210.project.models.Bill bill = new com.cs210.project.models.Bill();
             bill.setReservationId(resId);
             billRepo.create(bill);
-            
+
             // 1. Base Charge
             long days = java.time.temporal.ChronoUnit.DAYS.between(pickupDate.toLocalDate(), returnDate.toLocalDate());
-            if (days < 1) days = 1;
+            if (days < 1)
+                days = 1;
             BigDecimal baseAmount = BigDecimal.valueOf(v.getPricePerDay() * days);
-            billRepo.addItem(bill.getId(), BillItemType.BASE_CHARGE, baseAmount, "Base Rental Charge (" + days + " days)");
+            billRepo.addItem(bill.getId(), BillItemType.BASE_CHARGE, baseAmount,
+                    "Base Rental Charge (" + days + " days)");
 
             // 2. Add Insurances
             for (InsuranceType type : insurances) {
@@ -98,22 +99,13 @@ public class ReservationService {
                 billRepo.addItem(bill.getId(), BillItemType.EQUIPMENT, price, "Equipment: " + type.getLabel());
             }
 
-            // 4. Add Services
-            for (ServiceType type : services) {
-                BigDecimal price = servicePrice(type);
-                com.cs210.project.models.Service s = new com.cs210.project.models.Service();
-                s.setReservationId(resId);
-                s.setServiceType(type);
-                s.setPrice(price);
-                serviceRepo.add(s);
-                billRepo.addItem(bill.getId(), BillItemType.SERVICE, price, "Service: " + type.getLabel());
-            }
-
             billRepo.updateTotal(bill.getId());
 
             // Create Notification
-            notifyRepo.create(resId, NotificationType.RESERVATION_CONFIRMATION, "Reservation " + resNumber + " confirmed for " + v.getMake() + " " + v.getModel());
-            logRepo.addLog(vehicleId, VehicleLogType.OTHER, "Reservation " + resNumber + " created for " + pickupDate + " to " + returnDate + ".", null);
+            notifyRepo.create(resId, NotificationType.RESERVATION_CONFIRMATION,
+                    "Reservation " + resNumber + " confirmed for " + v.getMake() + " " + v.getModel());
+            logRepo.addLog(vehicleId, VehicleLogType.OTHER,
+                    "Reservation " + resNumber + " created for " + pickupDate + " to " + returnDate + ".", null);
 
             return resNumber;
         }
@@ -131,17 +123,29 @@ public class ReservationService {
         // Implementation for cancellation
         String sql = "SELECT * FROM vehicle_reservations WHERE id = ?";
         try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+                PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setInt(1, resId);
             try (ResultSet rs = pstmt.executeQuery()) {
                 if (rs.next()) {
                     int vehicleId = rs.getInt("vehicle_id");
                     int status = rs.getInt("status");
-                    if (status > 3) throw new Exception("Cannot cancel completed or already cancelled reservation.");
-                    
+                    if (status > 3)
+                        throw new Exception("Cannot cancel completed or already cancelled reservation.");
+
                     resRepo.updateStatus(resId, ReservationStatus.CANCELLED);
-                    notifyRepo.create(resId, NotificationType.CANCELLATION_NOTIFICATION, "Reservation " + rs.getString("reservation_number") + " has been cancelled.");
-                    logRepo.addLog(vehicleId, VehicleLogType.OTHER, "Reservation " + rs.getString("reservation_number") + " cancelled.", null);
+
+                    // Handle cancellation fee
+                    com.cs210.project.models.Bill bill = billRepo.findByReservationId(resId);
+                    if (bill != null) {
+                        billRepo.clearItems(bill.getId());
+                        billRepo.addItem(bill.getId(), BillItemType.CANCELLATION_FEE, new BigDecimal("10.00"),
+                                "Cancellation Fee");
+                    }
+
+                    notifyRepo.create(resId, NotificationType.CANCELLATION_NOTIFICATION,
+                            "Reservation " + rs.getString("reservation_number") + " has been cancelled.");
+                    logRepo.addLog(vehicleId, VehicleLogType.OTHER,
+                            "Reservation " + rs.getString("reservation_number") + " cancelled.", null);
                 }
             }
         }
@@ -149,13 +153,14 @@ public class ReservationService {
 
     public void updateReservation(VehicleReservation res) {
         resRepo.update(res);
-        notifyRepo.create(res.getId(), NotificationType.RESERVATION_REMINDER, "Reservation " + res.getReservationNumber() + " has been updated by staff.");
+        notifyRepo.create(res.getId(), NotificationType.RESERVATION_REMINDER,
+                "Reservation " + res.getReservationNumber() + " has been updated by staff.");
     }
 
     public void deleteReservation(int resId) throws Exception {
         String sql = "SELECT vehicle_id FROM vehicle_reservations WHERE id = ?";
         try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+                PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setInt(1, resId);
             try (ResultSet rs = pstmt.executeQuery()) {
                 if (rs.next()) {
@@ -166,7 +171,6 @@ public class ReservationService {
         }
         resRepo.delete(resId);
     }
-
 
     private BigDecimal insurancePrice(InsuranceType type) {
         return switch (type) {
@@ -185,10 +189,4 @@ public class ReservationService {
         };
     }
 
-    private BigDecimal servicePrice(ServiceType type) {
-        return switch (type) {
-            case ROADSIDE_ASSISTANCE -> new BigDecimal("20.00");
-            case ADDITIONAL_DRIVER -> new BigDecimal("25.00");
-        };
-    }
 }

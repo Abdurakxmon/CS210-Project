@@ -6,16 +6,12 @@ USE car_rental_system;
 SET FOREIGN_KEY_CHECKS = 0;
 DELETE FROM return_inspections;
 DELETE FROM cash_transactions;
-DELETE FROM check_transactions;
-DELETE FROM credit_card_transactions;
 DELETE FROM payments;
 DELETE FROM bill_items;
 DELETE FROM bills;
 DELETE FROM notifications;
-DELETE FROM services;
 DELETE FROM equipment;
 DELETE FROM rental_insurances;
-DELETE FROM additional_drivers;
 DELETE FROM vehicle_reservations;
 DELETE FROM vehicle_logs;
 DELETE FROM members;
@@ -121,48 +117,36 @@ INSERT INTO equipment (id, reservation_id, equipment_type, price) VALUES
 (1, 1, 1, 10.00),
 (2, 4, 1, 10.00);
 
-INSERT INTO services (id, reservation_id, service_type, price) VALUES
-(1, 2, 1, 20.00),
-(2, 6, 1, 20.00);
-
 INSERT INTO bills (id, reservation_id, total_amount) VALUES
 (1, 1, 55.00),
-(2, 2, 40.00),
+(2, 2, 20.00),
 (3, 3, 65.00),
 (4, 4, 45.00),
 (5, 5, 55.00),
-(6, 6, 50.00);
+(6, 6, 30.00);
 
 INSERT INTO bill_items (id, bill_id, item_type, amount, service_name) VALUES
 (1, 1, 1, 30.00, 'Base Rental Charge (3 days)'),
 (2, 1, 2, 15.00, 'Insurance: Additional insurance (deductible)'),
 (3, 1, 3, 10.00, 'Equipment: Navigation'),
 (4, 2, 1, 20.00, 'Base Rental Charge (2 days)'),
-(5, 2, 4, 20.00, 'Service: Roadside Assistance'),
-(6, 3, 1, 50.00, 'Base Rental Charge (5 days)'),
-(7, 3, 2, 15.00, 'Insurance: Additional insurance (deductible)'),
-(8, 4, 1, 20.00, 'Base Rental Charge (2 days)'),
-(9, 4, 2, 15.00, 'Insurance: Personal'),
-(10, 4, 3, 10.00, 'Equipment: Navigation'),
-(11, 5, 1, 30.00, 'Base Rental Charge (3 days)'),
-(12, 5, 6, 20.00, 'Damage Fee'),
-(13, 5, 7, 5.00, 'Fuel Fee'),
-(14, 6, 1, 30.00, 'Base Rental Charge (3 days)'),
-(15, 6, 4, 20.00, 'Service: Roadside Assistance');
+(5, 3, 1, 50.00, 'Base Rental Charge (5 days)'),
+(6, 3, 2, 15.00, 'Insurance: Additional insurance (deductible)'),
+(7, 4, 1, 20.00, 'Base Rental Charge (2 days)'),
+(8, 4, 2, 15.00, 'Insurance: Personal'),
+(9, 4, 3, 10.00, 'Equipment: Navigation'),
+(10, 5, 1, 30.00, 'Base Rental Charge (3 days)'),
+(11, 5, 6, 20.00, 'Damage Fee'),
+(12, 5, 7, 5.00, 'Fuel Fee'),
+(13, 6, 1, 30.00, 'Base Rental Charge (3 days)');
 
 INSERT INTO payments (id, bill_id, creation_date, amount, status, payment_type, processed_by_account_id) VALUES
-(1, 2, '2026-05-04 08:45:00', 40.00, 3, 1, 2),
+(1, 2, '2026-05-04 08:45:00', 20.00, 3, 1, 2),
 (2, 3, '2026-05-02 10:00:00', 65.00, 3, 3, 2),
 (3, 4, '2026-05-01 10:30:00', 45.00, 3, 1, 2),
 (4, 5, '2026-04-27 09:00:00', 30.00, 3, 1, 2),
 (5, 5, '2026-04-30 16:05:00', 15.00, 3, 3, 3),
-(6, 6, '2026-04-20 09:35:00', 50.00, 9, 1, NULL);
-
-INSERT INTO credit_card_transactions (id, payment_id, name_on_card) VALUES
-(1, 1, 'Jasur Alimov'),
-(2, 3, 'Malika Karimova'),
-(3, 4, 'Malika Karimova'),
-(4, 6, 'Jasur Alimov');
+(6, 6, '2026-04-20 09:35:00', 30.00, 9, 1, NULL);
 
 INSERT INTO cash_transactions (id, payment_id, cash_tendered) VALUES
 (1, 2, 65.00),
@@ -175,23 +159,23 @@ INSERT INTO return_inspections (
 (1, 5, 3, 3, '2026-04-30 15:30:00', 12480, 62, 'Front bumper scratch documented during return inspection.', 20.00, 5.00, TRUE, FALSE, 3, 'Customer paid part of the post-inspection balance.'),
 (2, 6, 5, 3, '2026-04-23 09:45:00', 3450, 88, 'Good condition.', 0.00, 0.00, TRUE, FALSE, 5, 'No additional charges.');
 
-INSERT INTO notifications (id, reservation_id, notification_type, created_on, content, is_read, address, email) VALUES
-(1, 1, 1, '2026-05-03 09:01:00', 'Reservation RES-20260503-000001 confirmed for Chevrolet Nexia 3.', FALSE, NULL, 'jasur@gmail.com'),
-(2, 1, 2, '2026-05-04 09:00:00', 'Upcoming reservation reminder for RES-20260503-000001.', FALSE, NULL, 'jasur@gmail.com'),
-(3, 1, 4, '2026-05-04 09:05:00', 'Pickup reminder for reservation RES-20260503-000001.', FALSE, NULL, 'jasur@gmail.com'),
-(4, 2, 1, '2026-05-04 08:16:00', 'Reservation RES-20260504-000001 confirmed for Chevrolet Cobalt.', FALSE, NULL, 'jasur@gmail.com'),
-(5, 2, 8, '2026-05-04 08:45:00', 'Payment received for reservation RES-20260504-000001.', FALSE, NULL, 'jasur@gmail.com'),
-(6, 2, 2, '2026-05-04 09:00:00', 'Upcoming reservation reminder for RES-20260504-000001.', FALSE, NULL, 'jasur@gmail.com'),
-(7, 2, 4, '2026-05-04 09:05:00', 'Pickup reminder for reservation RES-20260504-000001.', FALSE, NULL, 'jasur@gmail.com'),
-(8, 3, 1, '2026-05-02 09:31:00', 'Reservation RES-20260502-000001 confirmed for Chevrolet Tahoe.', TRUE, NULL, 'jasur@gmail.com'),
-(9, 3, 8, '2026-05-02 10:00:00', 'Payment received for reservation RES-20260502-000001.', TRUE, NULL, 'jasur@gmail.com'),
-(10, 3, 4, '2026-05-02 13:00:00', 'Vehicle picked up. Your rental has started.', FALSE, NULL, 'jasur@gmail.com'),
-(11, 4, 12, '2026-05-03 13:15:00', 'Return initiated for RES-20260501-000001. Worker inspection is required.', FALSE, NULL, 'malika@mail.ru'),
-(12, 5, 7, '2026-04-30 15:35:00', 'Vehicle returned successfully for RES-20260427-000001.', FALSE, NULL, 'malika@mail.ru'),
-(13, 5, 10, '2026-04-30 15:36:00', 'Damage fee of $20.00 has been added to your bill.', FALSE, NULL, 'malika@mail.ru'),
-(14, 5, 11, '2026-04-30 15:37:00', 'Fuel fee of $5.00 has been added to your bill.', FALSE, NULL, 'malika@mail.ru'),
-(15, 6, 7, '2026-04-23 09:48:00', 'Vehicle returned successfully for RES-20260420-000001.', TRUE, NULL, 'jasur@gmail.com'),
-(16, 6, 8, '2026-04-20 09:35:00', 'Payment received for reservation RES-20260420-000001.', TRUE, NULL, 'jasur@gmail.com');
+INSERT INTO notifications (id, reservation_id, notification_type, created_on, content, is_read) VALUES
+(1, 1, 1, '2026-05-03 09:01:00', 'Reservation RES-20260503-000001 confirmed for Chevrolet Nexia 3.', FALSE),
+(2, 1, 2, '2026-05-04 09:00:00', 'Upcoming reservation reminder for RES-20260503-000001.', FALSE),
+(3, 1, 4, '2026-05-04 09:05:00', 'Pickup reminder for reservation RES-20260503-000001.', FALSE),
+(4, 2, 1, '2026-05-04 08:16:00', 'Reservation RES-20260504-000001 confirmed for Chevrolet Cobalt.', FALSE),
+(5, 2, 8, '2026-05-04 08:45:00', 'Payment received for reservation RES-20260504-000001.', FALSE),
+(6, 2, 2, '2026-05-04 09:00:00', 'Upcoming reservation reminder for RES-20260504-000001.', FALSE),
+(7, 2, 4, '2026-05-04 09:05:00', 'Pickup reminder for reservation RES-20260504-000001.', FALSE),
+(8, 3, 1, '2026-05-02 09:31:00', 'Reservation RES-20260502-000001 confirmed for Chevrolet Tahoe.', TRUE),
+(9, 3, 8, '2026-05-02 10:00:00', 'Payment received for reservation RES-20260502-000001.', TRUE),
+(10, 3, 4, '2026-05-02 13:00:00', 'Vehicle picked up. Your rental has started.', FALSE),
+(11, 4, 12, '2026-05-03 13:15:00', 'Return initiated for RES-20260501-000001. Worker inspection is required.', FALSE),
+(12, 5, 7, '2026-04-30 15:35:00', 'Vehicle returned successfully for RES-20260427-000001.', FALSE),
+(13, 5, 10, '2026-04-30 15:36:00', 'Damage fee of $20.00 has been added to your bill.', FALSE),
+(14, 5, 11, '2026-04-30 15:37:00', 'Fuel fee of $5.00 has been added to your bill.', FALSE),
+(15, 6, 7, '2026-04-23 09:48:00', 'Vehicle returned successfully for RES-20260420-000001.', TRUE),
+(16, 6, 8, '2026-04-20 09:35:00', 'Payment received for reservation RES-20260420-000001.', TRUE);
 
 INSERT INTO vehicle_logs (id, vehicle_id, log_type, description, creation_date, account_id) VALUES
 (1, 1, 6, 'Reservation RES-20260503-000001 created for 2026-05-05T10:00 to 2026-05-08T12:00.', '2026-05-03 09:01:00', NULL),
@@ -205,15 +189,11 @@ ALTER TABLE accounts AUTO_INCREMENT = 7;
 ALTER TABLE members AUTO_INCREMENT = 4;
 ALTER TABLE persons AUTO_INCREMENT = 7;
 ALTER TABLE vehicle_reservations AUTO_INCREMENT = 7;
-ALTER TABLE additional_drivers AUTO_INCREMENT = 1;
 ALTER TABLE rental_insurances AUTO_INCREMENT = 4;
 ALTER TABLE equipment AUTO_INCREMENT = 3;
-ALTER TABLE services AUTO_INCREMENT = 3;
 ALTER TABLE bills AUTO_INCREMENT = 7;
-ALTER TABLE bill_items AUTO_INCREMENT = 16;
+ALTER TABLE bill_items AUTO_INCREMENT = 14;
 ALTER TABLE payments AUTO_INCREMENT = 7;
-ALTER TABLE credit_card_transactions AUTO_INCREMENT = 5;
-ALTER TABLE check_transactions AUTO_INCREMENT = 1;
 ALTER TABLE cash_transactions AUTO_INCREMENT = 3;
 ALTER TABLE notifications AUTO_INCREMENT = 17;
 ALTER TABLE vehicle_logs AUTO_INCREMENT = 7;

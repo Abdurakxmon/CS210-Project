@@ -74,7 +74,8 @@ public class Enums {
 
     public enum BillItemType {
         BASE_CHARGE(1, "Base Charge"), INSURANCE(2, "Insurance"), EQUIPMENT(3, "Equipment"),
-        SERVICE(4, "Service"), LATE_FEE(5, "Late Fee"), DAMAGE_FEE(6, "Damage Fee"),
+        CANCELLATION_FEE(4, "Cancellation Fee"),
+        LATE_FEE(5, "Late Fee"), DAMAGE_FEE(6, "Damage Fee"),
         FUEL_FEE(7, "Fuel Fee"), OTHER(8, "Other");
         private final int value;
         private final String label;
@@ -137,19 +138,6 @@ public class Enums {
         public static EquipmentType fromInt(int v) {
             for (EquipmentType t : values()) if (t.value == v) return t;
             return NAVIGATION;
-        }
-    }
-
-    public enum ServiceType {
-        ROADSIDE_ASSISTANCE(1, "Roadside Assistance"), ADDITIONAL_DRIVER(2, "Additional Driver");
-        private final int value;
-        private final String label;
-        ServiceType(int v, String l) { this.value = v; this.label = l; }
-        public int getValue() { return value; }
-        public String getLabel() { return label; }
-        public static ServiceType fromInt(int v) {
-            for (ServiceType t : values()) if (t.value == v) return t;
-            return ROADSIDE_ASSISTANCE;
         }
     }
 

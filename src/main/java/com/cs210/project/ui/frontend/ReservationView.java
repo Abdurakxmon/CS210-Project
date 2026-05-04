@@ -2,7 +2,6 @@ package com.cs210.project.ui.frontend;
 
 import com.cs210.project.constants.Enums.EquipmentType;
 import com.cs210.project.constants.Enums.InsuranceType;
-import com.cs210.project.constants.Enums.ServiceType;
 import com.cs210.project.constants.VehicleStatus;
 import com.cs210.project.models.Account;
 import com.cs210.project.models.Bill;
@@ -70,8 +69,7 @@ public class ReservationView extends VBox {
             new AddonOption("Wi-Fi Hotspot", EquipmentType.WIFI, 9.00),
             new AddonOption("Additional insurance (deductible)", InsuranceType.BASIC, 15.00),
             new AddonOption("Child Seat", EquipmentType.CHILD_SEAT, 7.00),
-            new AddonOption("Car fridge", EquipmentType.CAR_FRIDGE, 12.00),
-            new AddonOption("Additional Driver", ServiceType.ADDITIONAL_DRIVER, 25.00)
+            new AddonOption("Car fridge", EquipmentType.CAR_FRIDGE, 12.00)
     );
 
     public ReservationView(Account currentUser) {
@@ -451,8 +449,7 @@ public class ReservationView extends VBox {
                     pickupDate,
                     returnDate,
                     selectedInsuranceTypes(),
-                    selectedEquipmentTypes(),
-                    selectedServiceTypes());
+                    selectedEquipmentTypes());
 
             Bill bill = null;
             com.cs210.project.models.VehicleReservation reservation = new ReservationRepository().findByNumber(reservationNumber);
@@ -487,16 +484,6 @@ public class ReservationView extends VBox {
                 .map(AddonOption::type)
                 .filter(EquipmentType.class::isInstance)
                 .map(EquipmentType.class::cast)
-                .collect(Collectors.toList());
-    }
-
-    private List<ServiceType> selectedServiceTypes() {
-        return addonChecks.stream()
-                .filter(CheckBox::isSelected)
-                .map(checkBox -> (AddonOption) checkBox.getUserData())
-                .map(AddonOption::type)
-                .filter(ServiceType.class::isInstance)
-                .map(ServiceType.class::cast)
                 .collect(Collectors.toList());
     }
 
